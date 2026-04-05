@@ -417,16 +417,20 @@ export default function Home() {
   });
 
   return (
-    <div style={{ minHeight: "100%", background: "#f0f4f8", paddingBottom: 20 }}>
+    <div className="desktop-content" style={{ minHeight: "100%", background: "#f0f4f8", paddingBottom: 20 }}>
 
       {/* ── HERO ── */}
-      <Hero isAuthenticated={isAuthenticated} navigate={navigate} name={user?.name} />
+      <div className="desktop-hero">
+        <Hero isAuthenticated={isAuthenticated} navigate={navigate} name={user?.name} />
+      </div>
 
       {/* ── STATS ── */}
-      <StatsStrip />
+      <div className="desktop-px">
+        <StatsStrip />
+      </div>
 
       {/* ── SERVICES TITLE ── */}
-      <div style={{ padding: "28px 20px 14px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+      <div className="desktop-px" style={{ padding: "28px 20px 14px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
         <div>
           <p style={{ color: "#0077b6", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 3 }}>
             Nuestros servicios
@@ -440,7 +444,7 @@ export default function Home() {
       </div>
 
       {/* ── SERVICES SCROLL ── */}
-      <div style={{
+      <div className="desktop-scroll-to-grid desktop-px" style={{
         display: "flex", gap: 14, overflowX: "auto",
         scrollSnapType: "x mandatory", padding: "4px 20px 8px",
         scrollBehavior: "smooth",
@@ -466,7 +470,7 @@ export default function Home() {
       </div>
 
       {/* ── CITY BANNER ── */}
-      <div style={{ padding: "20px 16px 0" }}>
+      <div className="desktop-px" style={{ padding: "20px 16px 0" }}>
         <div style={{
           borderRadius: 22, overflow: "hidden", position: "relative", height: 120,
         }}>
@@ -487,7 +491,7 @@ export default function Home() {
       </div>
 
       {/* ── LOCATIONS TITLE ── */}
-      <div style={{ padding: "24px 20px 14px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+      <div className="desktop-px" style={{ padding: "24px 20px 14px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
         <div>
           <p style={{ color: "#0077b6", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 3 }}>
             Dónde estamos
@@ -501,7 +505,7 @@ export default function Home() {
       </div>
 
       {/* ── LOCATIONS ── */}
-      <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+      <div className="desktop-px desktop-grid-2" style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 10 }}>
         {!locations
           ? [1, 2, 3].map(i => <div key={i} style={{ height: 80, borderRadius: 20, background: "#e0e8f0" }} />)
           : locations.map((l, i) => (
@@ -522,7 +526,7 @@ export default function Home() {
 
       {/* ── PUBLIC CTA ── */}
       {!isAuthenticated && (
-        <div style={{ padding: "20px 16px 0" }}>
+        <div className="desktop-px" style={{ padding: "20px 16px 0" }}>
           <div style={{ position: "relative", borderRadius: 26, overflow: "hidden" }}>
             {/* Photo bg */}
             <img

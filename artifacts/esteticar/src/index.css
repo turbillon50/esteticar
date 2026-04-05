@@ -114,3 +114,56 @@
 .overflow-y-auto {
   -webkit-overflow-scrolling: touch;
 }
+
+/* ── Desktop content background ── */
+@media (min-width: 768px) {
+  .desktop-content {
+    background: linear-gradient(145deg, #020b1a 0%, #03045e 40%, #0077b6 100%) !important;
+    min-height: 100dvh;
+  }
+  .desktop-card {
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: #fff !important;
+  }
+  .desktop-section-bg {
+    background: rgba(3,4,94,0.4) !important;
+    border-radius: 24px;
+    padding: 28px !important;
+    margin: 0 32px !important;
+  }
+  .desktop-hero {
+    border-radius: 24px !important;
+    margin: 32px 32px 0 !important;
+  }
+  .desktop-grid-2 {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 16px !important;
+  }
+  .desktop-grid-3 {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 16px !important;
+  }
+  .desktop-scroll-to-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 16px !important;
+    overflow-x: visible !important;
+    scroll-snap-type: none !important;
+    padding: 4px 0 16px !important;
+  }
+  .desktop-scroll-to-grid > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    scroll-snap-align: none !important;
+  }
+  .desktop-px {
+    padding-left: 32px !important;
+    padding-right: 32px !important;
+  }
+  .desktop-hide-hero-radius {
+    border-radius: 0 0 0 0 !important;
+  }
+}
