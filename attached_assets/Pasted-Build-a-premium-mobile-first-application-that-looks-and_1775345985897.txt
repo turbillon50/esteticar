@@ -1,0 +1,170 @@
+Build a premium mobile-first application that looks and behaves like a fully native iPhone app.
+
+App Name: Esteticar
+Category: Car Wash Booking Platform
+
+CORE IDEA:
+This is NOT a ride-sharing app.
+This is a smart booking system for car wash services across multiple physical locations.
+
+Users book a time slot at a nearby car wash location, arrive at the scheduled time, and receive service without waiting in line.
+
+No real-time GPS tracking, no driver movement, no Uber-like logic.
+
+---
+
+DESIGN REQUIREMENTS:
+- Native iPhone feel
+- Clean modern UI
+- Premium minimal design
+- Strong visual hierarchy
+- Smooth animations
+- Card-based layout
+- Bottom navigation
+- High-end aesthetic (similar to Apple-level UX)
+- No generic UI
+- No Lucide icons
+- No cheap templates
+- Elegant typography
+- Light background with dark text
+- Accent color: deep blue or aqua
+
+---
+
+USER ROLES:
+
+1. GENERAL PUBLIC
+- View services
+- View prices
+- View brand
+- View locations
+- Contact info
+
+---
+
+2. CUSTOMER (USER)
+- Create account
+- Login
+- View services
+- Select service
+- View locations on map
+- Choose nearest location
+- Select date
+- Select time slot
+- Book appointment
+- View upcoming bookings
+- View booking history
+- Receive reminders
+
+---
+
+3. SERVICE PROVIDER (WASHER)
+- View assigned appointments
+- View daily schedule
+- Mark appointment as completed
+- View history of services
+- Basic stats (optional)
+
+---
+
+4. ADMIN (ESTETICAR)
+- Create and manage locations
+- Add service providers
+- Assign providers to locations
+- Manage services and pricing
+- View all bookings
+- Control time slots per location
+- Dashboard of operations
+
+---
+
+MAIN FEATURES:
+
+HOME SCREEN:
+- Hero banner
+- Call to action: "Agenda tu lavado"
+- Quick service selection
+- Promotions (optional)
+- Nearby locations preview
+
+---
+
+SERVICES:
+- Lavado básico ($120)
+- Camioneta ($180)
+- Lavado completo con interiores ($800)
+
+Each service must include:
+- Image
+- Description
+- Duration estimate
+- Price
+
+---
+
+BOOKING FLOW:
+1. Select service
+2. Select location (map + list)
+3. Select date
+4. Select available time slot
+5. Confirm booking
+
+---
+
+LOCATIONS MODULE:
+- Map view (Google Maps embed)
+- Pins for each location
+- Tap to select
+- Show address and schedule
+
+---
+
+TIME SLOT SYSTEM:
+- Predefined slots (e.g. every 30–60 min)
+- Availability per location
+- Prevent double booking
+
+---
+
+BOOKINGS:
+- Upcoming bookings
+- Past bookings
+- Status:
+  - Confirmed
+  - Completed
+  - Cancelled
+
+---
+
+NOTIFICATIONS:
+- Booking confirmation
+- Reminder before appointment
+
+---
+
+ADMIN PANEL:
+- Locations management
+- Time slots configuration
+- Service pricing
+- Booking overview
+- Provider management
+- Basic metrics
+
+---
+
+TECH REQUIREMENTS:
+- Mobile-first PWA
+- Native app feel
+- Fast load
+- Clean architecture
+- Database for users, bookings, locations, providers
+- Ready for deployment
+- GitHub ready
+- Vercel ready
+
+---
+
+GOAL:
+Deliver a premium booking application for car wash services that eliminates waiting lines and organizes customer flow through scheduled appointments.
+
+The app must feel simple, fast, elegant, and highly usable.

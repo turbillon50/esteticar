@@ -1,0 +1,26 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "X62Vj5PVVC74b5OovHMLi"
+uri = "file://artifacts/esteticar/public/services/basico.png"
+type = "image"
+title = "Basic car wash shiny sedan"
+
+[[generated]]
+id = "EsDs7TokbPU_70I3fX7OF"
+uri = "file://artifacts/esteticar/public/services/camioneta.png"
+type = "image"
+title = "SUV at modern car wash"
+
+[[generated]]
+id = "bBoC3O9te35WIMJ4DLGzI"
+uri = "file://artifacts/esteticar/public/services/completo.png"
+type = "image"
+title = "Interior detailing luxury car"
+
+[[generated]]
+id = "4fLXjl84Op0zT4BJ3gIgR"
+uri = "file://artifacts/esteticar/public/hero.png"
+type = "image"
+title = "Modern car wash at dusk"
