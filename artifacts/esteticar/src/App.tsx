@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/components/AuthProvider";
 import { MobileLayout } from "@/components/MobileLayout";
 import { useAuth } from "@/components/AuthProvider";
+import { SplashScreen } from "@/components/SplashScreen";
 
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
@@ -77,8 +79,18 @@ function RoleRouter() {
 }
 
 function App() {
+  const [splashDone, setSplashDone] = useState(
+    () => sessionStorage.getItem("splash-shown") === "1"
+  );
+
+  const handleSplashDone = () => {
+    sessionStorage.setItem("splash-shown", "1");
+    setSplashDone(true);
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
+      {!splashDone && <SplashScreen onDone={handleSplashDone} />}
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
         <AuthProvider>
           <MobileLayout>

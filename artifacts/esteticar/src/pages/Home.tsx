@@ -1,568 +1,657 @@
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import {
-  useListServices,
-  useListLocations,
-  useGetDashboardSummary,
-  getGetDashboardSummaryQueryKey,
-} from "@workspace/api-client-react";
+import { useListServices } from "@workspace/api-client-react";
 import { useAuth } from "@/components/AuthProvider";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 import {
-  BsArrowRight, BsStarFill, BsClock, BsGeoAlt,
-  BsDropletFill, BsShieldFill, BsXLg,
+  BsArrowRight, BsGeoAlt, BsCalendarCheck, BsBellFill,
+  BsPhone, BsCheckCircleFill, BsStarFill, BsDropletFill,
+  BsShieldFill, BsPersonFill, BsChevronDown, BsApple,
+  BsAndroid2,
 } from "react-icons/bs";
 import { HiShare } from "react-icons/hi2";
 
-/* ─── Unsplash image pool (car wash / foam / premium auto) ─ */
-const HERO_IMG = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=85";
-
-const SERVICE_IMGS = [
-  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
-  "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?w=800&q=80",
-  "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80",
-];
-
-const LOCATION_IMGS = [
-  "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=400&q=70",
-  "https://images.unsplash.com/photo-1562247647-48c0f3d8e58d?w=400&q=70",
-  "https://images.unsplash.com/photo-1622479986060-8b1d22baa6fb?w=400&q=70",
-];
-
-const GRADIENTS = [
-  "linear-gradient(145deg,#03045e 0%,#0077b6 45%,#00b4d8 80%,#90e0ef 100%)",
-  "linear-gradient(145deg,#005f73 0%,#0a9396 50%,#48cae4 85%,#caf0f8 100%)",
-  "linear-gradient(145deg,#10002b 0%,#3a0ca3 45%,#4cc9f0 100%)",
-];
-
-/* ─── PWA Install Banner ──────────────────────────────────── */
-function PWABanner() {
-  const [visible, setVisible] = useState(false);
-  const [platform, setPlatform] = useState<"ios" | "android" | null>(null);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-
-  useEffect(() => {
-    const dismissed = localStorage.getItem("pwa-dismissed");
-    if (dismissed) return;
-
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches
-      || (window.navigator as any).standalone;
-    if (isStandalone) return;
-
-    const ua = navigator.userAgent;
-    const isIOS = /iPhone|iPad|iPod/.test(ua) && !(window as any).MSStream;
-    const isAndroid = /Android/.test(ua);
-
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setPlatform("android");
-      setVisible(true);
-    };
-
-    window.addEventListener("beforeinstallprompt", handler as any);
-
-    if (isIOS) {
-      setPlatform("ios");
-      setTimeout(() => setVisible(true), 1500);
-    }
-
-    return () => window.removeEventListener("beforeinstallprompt", handler as any);
-  }, []);
-
-  const dismiss = () => {
-    setVisible(false);
-    localStorage.setItem("pwa-dismissed", "1");
-  };
-
-  const install = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") dismiss();
-    }
-  };
-
-  if (!visible) return null;
-
+// ─── Scroll-fade wrapper ─────────────────────────────────────────────────────
+function FadeIn({ children, delay = 0, y = 24 }: { children: React.ReactNode; delay?: number; y?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-40px" });
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 30 }}
-        style={{
-          margin: "0 16px",
-          borderRadius: 22,
-          overflow: "hidden",
-          background: "linear-gradient(135deg,#03045e 0%,#0077b6 60%,#00b4d8 100%)",
-          boxShadow: "0 8px 32px rgba(3,4,94,0.3)",
-          position: "relative",
-        }}
-      >
-        {/* Foam overlay */}
-        <div style={{
-          position: "absolute", inset: 0, pointerEvents: "none",
-          background: "radial-gradient(ellipse 60% 50% at 85% 20%, rgba(144,224,239,0.25) 0%, transparent 60%)",
-        }} />
-        <div style={{ padding: "18px 18px 20px", position: "relative", zIndex: 1 }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 12,
-                background: "rgba(255,255,255,0.15)",
-                border: "1px solid rgba(255,255,255,0.3)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 18, fontWeight: 900, color: "#fff",
-              }}>E</div>
-              <div>
-                <p style={{ color: "#fff", fontWeight: 900, fontSize: 14 }}>Instalar Esteticar</p>
-                <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 11 }}>Acceso directo desde tu pantalla</p>
-              </div>
-            </div>
-            <button onClick={dismiss} style={{
-              width: 28, height: 28, borderRadius: "50%",
-              background: "rgba(255,255,255,0.15)", border: "none",
-              display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-            }}>
-              <BsXLg style={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }} />
-            </button>
-          </div>
-
-          {platform === "ios" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {[
-                { n: 1, text: <>Toca <HiShare style={{ display:"inline", verticalAlign:"middle" }} /> en Safari</> },
-                { n: 2, text: "Selecciona \"Agregar a pantalla de inicio\"" },
-                { n: 3, text: "Toca \"Agregar\" — listo" },
-              ].map(({ n, text }) => (
-                <div key={n} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{
-                    width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
-                    background: "rgba(255,255,255,0.2)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "#fff", fontSize: 11, fontWeight: 800,
-                  }}>{n}</div>
-                  <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 12 }}>{text}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={install}
-              style={{
-                width: "100%", height: 44, borderRadius: 14,
-                background: "rgba(255,255,255,0.18)",
-                border: "1.5px solid rgba(255,255,255,0.35)",
-                color: "#fff", fontWeight: 800, fontSize: 14,
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                cursor: "pointer", fontFamily: "inherit",
-              }}
-            >
-              Agregar a pantalla de inicio <BsArrowRight />
-            </motion.button>
-          )}
-        </div>
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, delay, ease: "easeOut" }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
-/* ─── HERO ────────────────────────────────────────────────── */
-function Hero({ isAuthenticated, navigate, name }: any) {
+// ─── PWA install helpers ──────────────────────────────────────────────────────
+function usePWA() {
+  const [platform, setPlatform] = useState<"ios" | "android" | "other" | null>(null);
+  const [prompt, setPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as any).standalone;
+    if (isStandalone) { setIsInstalled(true); return; }
+    const ua = navigator.userAgent;
+    if (/iPhone|iPad|iPod/.test(ua)) setPlatform("ios");
+    else if (/Android/.test(ua)) setPlatform("android");
+    else setPlatform("other");
+    const handler = (e: Event) => { e.preventDefault(); setPrompt(e); };
+    window.addEventListener("beforeinstallprompt", handler as any);
+    return () => window.removeEventListener("beforeinstallprompt", handler as any);
+  }, []);
+
+  return { platform, prompt, isInstalled };
+}
+
+// ─── Section label ────────────────────────────────────────────────────────────
+function SectionLabel({ text }: { text: string }) {
   return (
-    <div style={{ position: "relative", height: 360, overflow: "hidden", borderRadius: "0 0 32px 32px" }}>
-      {/* Real car wash photo */}
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+      <div style={{ flex: 1, height: 1, background: "linear-gradient(90deg, rgba(0,119,182,0.3), transparent)" }} />
+      <span style={{ fontSize: 10, fontWeight: 900, color: "#0077b6", textTransform: "uppercase", letterSpacing: "0.16em" }}>{text}</span>
+      <div style={{ flex: 1, height: 1, background: "linear-gradient(270deg, rgba(0,119,182,0.3), transparent)" }} />
+    </div>
+  );
+}
+
+// ─── HERO ─────────────────────────────────────────────────────────────────────
+function Hero({ navigate, name, isAuthenticated }: any) {
+  return (
+    <div style={{ position: "relative", minHeight: "100dvh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* Background */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(165deg,#010b1f 0%,#03045e 30%,#0077b6 65%,#00b4d8 85%,#48cae4 100%)" }} />
+      {/* Photo overlay */}
       <img
-        src={HERO_IMG}
-        alt="Car wash"
-        style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+        src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=80"
+        alt=""
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", opacity: 0.18 }}
       />
-      {/* Cinematic gradient overlay */}
-      <div style={{
-        position: "absolute", inset: 0,
-        background: "linear-gradient(180deg, rgba(3,4,94,0.55) 0%, rgba(0,119,182,0.35) 40%, rgba(0,180,216,0.6) 80%, rgba(3,4,94,0.9) 100%)",
-      }} />
-      {/* Top: branding */}
-      <div style={{ position: "absolute", top: 52, left: 20, right: 20, display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 2 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{
-            width: 34, height: 34, borderRadius: 10,
-            background: "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.3)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 15, fontWeight: 900, color: "#fff",
-          }}>E</div>
-          <span style={{ color: "#fff", fontWeight: 900, letterSpacing: "0.1em", fontSize: 12 }}>ESTETICAR</span>
+      {/* Gradient mask */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(3,4,94,0.2) 0%, rgba(3,4,94,0.1) 40%, rgba(3,4,94,0.7) 75%, rgba(2,11,31,0.98) 100%)" }} />
+
+      {/* Animated orb */}
+      <motion.div
+        animate={{ scale: [1, 1.08, 1], opacity: [0.2, 0.32, 0.2] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        style={{ position: "absolute", top: "12%", right: "-15%", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(72,202,228,0.45) 0%, transparent 70%)", pointerEvents: "none" }}
+      />
+
+      {/* Top nav */}
+      <div style={{ position: "relative", zIndex: 2, padding: "52px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 11, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(12px)", border: "1px solid rgba(255,255,255,0.25)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <BsDropletFill style={{ color: "#48cae4", fontSize: 16 }} />
+          </div>
+          <span style={{ color: "#fff", fontWeight: 900, fontSize: 15, letterSpacing: "0.12em" }}>ESTETICAR</span>
         </div>
-        <div style={{
-          background: "rgba(0,180,216,0.25)", backdropFilter: "blur(10px)",
-          border: "1px solid rgba(72,202,228,0.4)",
-          borderRadius: 20, padding: "4px 12px",
-        }}>
-          <span style={{ color: "#48cae4", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-            Cuernavaca, Mor.
-          </span>
-        </div>
-      </div>
-      {/* Bottom: headline + CTA */}
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 20px 24px", zIndex: 2 }}>
         {isAuthenticated ? (
-          <p style={{ color: "rgba(144,224,239,0.9)", fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Bienvenido, {name?.split(" ")[0]}</p>
-        ) : null}
-        <p style={{ color: "#fff", fontSize: 34, fontWeight: 900, lineHeight: 1.05, marginBottom: 16 }}>
-          Tu auto merece<br />lo mejor.
-        </p>
-        <motion.button
-          whileTap={{ scale: 0.96 }}
-          onClick={() => navigate("/book")}
-          style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            width: "100%", height: 56, borderRadius: 18,
-            background: "rgba(255,255,255,0.14)", backdropFilter: "blur(16px)",
-            border: "1.5px solid rgba(255,255,255,0.35)",
-            padding: "0 18px", cursor: "pointer",
-          }}
+          <motion.button whileTap={{ scale: 0.94 }} onClick={() => navigate("/profile")}
+            style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 20, padding: "6px 14px", cursor: "pointer" }}>
+            <span style={{ color: "#48cae4", fontSize: 12, fontWeight: 700 }}>{name?.split(" ")[0]}</span>
+          </motion.button>
+        ) : (
+          <motion.button whileTap={{ scale: 0.94 }} onClick={() => navigate("/login")}
+            style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 20, padding: "6px 14px", cursor: "pointer" }}>
+            <span style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: 700 }}>Entrar</span>
+          </motion.button>
+        )}
+      </div>
+
+      {/* Hero content */}
+      <div style={{ position: "relative", zIndex: 2, flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "0 20px 40px" }}>
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.2 }}>
+          {isAuthenticated && name && (
+            <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Bienvenido, {name.split(" ")[0]}</p>
+          )}
+          <h1 style={{ color: "#fff", fontSize: 42, fontWeight: 900, lineHeight: 1.0, marginBottom: 12 }}>
+            El lavado<br />
+            <span style={{ WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundImage: "linear-gradient(90deg,#48cae4,#90e0ef)", backgroundClip: "text" }}>
+              que merece
+            </span><br />
+            tu auto.
+          </h1>
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 15, fontWeight: 500, lineHeight: 1.55, marginBottom: 28, maxWidth: 300 }}>
+            Agenda, rastrea y disfruta el mejor lavado de tu ciudad — desde tu celular.
+          </p>
+
+          {/* CTA */}
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            whileHover={{ scale: 1.01 }}
+            onClick={() => navigate("/book")}
+            style={{
+              width: "100%", height: 60, borderRadius: 20,
+              background: "linear-gradient(135deg,#0077b6,#00b4d8)",
+              border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "0 20px 0 24px",
+              boxShadow: "0 8px 32px rgba(0,119,182,0.5), 0 0 0 1px rgba(72,202,228,0.3)",
+              fontFamily: "inherit",
+            }}
+          >
+            <div style={{ textAlign: "left" }}>
+              <p style={{ color: "#fff", fontWeight: 900, fontSize: 16 }}>Agendar mi lavado</p>
+              <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 11, fontWeight: 600 }}>Elige servicio · fecha · sucursal</p>
+            </div>
+            <div style={{ width: 40, height: 40, borderRadius: 14, background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <BsArrowRight style={{ color: "#fff", fontSize: 16 }} />
+            </div>
+          </motion.button>
+        </motion.div>
+
+        {/* Scroll hint */}
+        <motion.div
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          style={{ display: "flex", justifyContent: "center", marginTop: 28, opacity: 0.4 }}
         >
-          <div>
-            <p style={{ color: "#fff", fontWeight: 900, fontSize: 15, textAlign: "left" }}>Agendar lavado</p>
-            <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 11, textAlign: "left" }}>Elige servicio · sucursal · horario</p>
-          </div>
-          <div style={{
-            width: 38, height: 38, borderRadius: "50%",
-            background: "linear-gradient(135deg,#00b4d8,#0077b6)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 14px rgba(0,180,216,0.5)",
-          }}>
-            <BsArrowRight style={{ color: "#fff", fontSize: 16 }} />
-          </div>
-        </motion.button>
+          <BsChevronDown style={{ color: "#fff", fontSize: 18 }} />
+        </motion.div>
       </div>
     </div>
   );
 }
 
-/* ─── STATS STRIP ─────────────────────────────────────────── */
+// ─── STATS STRIP ──────────────────────────────────────────────────────────────
 function StatsStrip() {
   const stats = [
-    { icon: <BsGeoAlt />, val: "9", label: "Autolavados" },
-    { icon: <BsDropletFill />, val: "6", label: "Ciudades" },
-    { icon: <BsShieldFill />, val: "100%", label: "Garantía" },
+    { val: "9+", label: "Autolavados" },
+    { val: "6", label: "Ciudades" },
+    { val: "4.9", label: "Estrellas", star: true },
+    { val: "100%", label: "Garantía" },
   ];
   return (
-    <div style={{
-      display: "flex", gap: 0,
-      margin: "16px 16px 0",
-      borderRadius: 20, overflow: "hidden",
-      boxShadow: "0 4px 20px rgba(3,4,94,0.12)",
-    }}>
-      {stats.map(({ icon, val, label }, i) => (
+    <div style={{ display: "flex", background: "#fff", margin: "0 16px", borderRadius: 20, boxShadow: "0 4px 20px rgba(3,4,94,0.10)", overflow: "hidden" }}>
+      {stats.map(({ val, label, star }, i) => (
         <div key={label} style={{
-          flex: 1, padding: "14px 0", textAlign: "center",
-          background: i === 1
-            ? "linear-gradient(135deg,#0077b6,#00b4d8)"
-            : "#fff",
-          borderRight: i < 2 ? "1px solid rgba(3,4,94,0.06)" : undefined,
+          flex: 1, padding: "16px 0", textAlign: "center",
+          background: i === 1 ? "linear-gradient(135deg,#0077b6,#00b4d8)" : "#fff",
+          borderRight: i < 3 ? "1px solid #f0f4f8" : "none",
         }}>
-          <div style={{ color: i === 1 ? "rgba(255,255,255,0.8)" : "#00b4d8", fontSize: 14, marginBottom: 3 }}>{icon}</div>
-          <p style={{ fontWeight: 900, fontSize: 17, color: i === 1 ? "#fff" : "#03045e", lineHeight: 1 }}>{val}</p>
-          <p style={{ fontSize: 10, color: i === 1 ? "rgba(255,255,255,0.7)" : "#90a0b7", fontWeight: 600, marginTop: 2 }}>{label}</p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 2, marginBottom: 2 }}>
+            {star && <BsStarFill style={{ color: "#f59e0b", fontSize: 10 }} />}
+            <p style={{ fontWeight: 900, fontSize: 19, color: i === 1 ? "#fff" : "#03045e", lineHeight: 1 }}>{val}</p>
+          </div>
+          <p style={{ fontSize: 9, fontWeight: 800, color: i === 1 ? "rgba(255,255,255,0.7)" : "#90a0b7", textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</p>
         </div>
       ))}
     </div>
   );
 }
 
-/* ─── FEATURED SERVICE CARD ───────────────────────────────── */
-function ServiceCard({ service, gradient, imgFallback, onClick, index }: any) {
-  const img = service.imageUrl?.startsWith("http") ? service.imageUrl : imgFallback;
-  return (
-    <motion.button
-      whileTap={{ scale: 0.97 }}
-      onClick={onClick}
-      initial={{ opacity: 0, x: 30 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.08 }}
-      style={{
-        flexShrink: 0, width: "82vw", maxWidth: 340,
-        borderRadius: 26, overflow: "hidden",
-        background: gradient, position: "relative",
-        boxShadow: "0 16px 48px rgba(3,4,94,0.28)",
-        scrollSnapAlign: "start", cursor: "pointer",
-      }}
-    >
-      {/* Photo */}
-      <div style={{ height: 190, position: "relative", overflow: "hidden" }}>
-        <img src={img} alt={service.name}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        {/* gradient over photo */}
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(180deg, transparent 40%, rgba(3,4,94,0.7) 100%)",
-        }} />
-        {/* Price badge */}
-        <div style={{
-          position: "absolute", top: 14, right: 14,
-          background: "rgba(0,0,0,0.5)", backdropFilter: "blur(12px)",
-          border: "1px solid rgba(255,255,255,0.25)",
-          borderRadius: 12, padding: "6px 14px",
-        }}>
-          <span style={{ color: "#fff", fontWeight: 900, fontSize: 17 }}>
-            ${Number(service.price).toLocaleString()}
-          </span>
-        </div>
-        {/* Category chip */}
-        <div style={{
-          position: "absolute", top: 14, left: 14,
-          background: "rgba(0,180,216,0.3)", backdropFilter: "blur(8px)",
-          border: "1px solid rgba(72,202,228,0.4)",
-          borderRadius: 10, padding: "4px 10px",
-        }}>
-          <span style={{ color: "#48cae4", fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-            Destacado
-          </span>
-        </div>
-      </div>
+// ─── FEATURES ─────────────────────────────────────────────────────────────────
+const FEATURES = [
+  {
+    icon: BsGeoAlt,
+    color: "#0077b6",
+    bg: "linear-gradient(135deg,#03045e,#0077b6)",
+    title: "Te ubicamos al instante",
+    desc: "Activa tu GPS y Esteticar detecta dónde estás. El mapa muestra todos los autolavados del más cercano al más lejano — en segundos.",
+    tag: "GPS inteligente",
+  },
+  {
+    icon: BsCalendarCheck,
+    color: "#00b4d8",
+    bg: "linear-gradient(135deg,#005f73,#0077b6,#00b4d8)",
+    title: "Calendario de citas",
+    desc: "Elige el día exacto en el calendario mensual y ve los horarios disponibles en tiempo real. Tu cita siempre en el momento que quieres.",
+    tag: "Horario exacto",
+  },
+  {
+    icon: BsBellFill,
+    color: "#48cae4",
+    bg: "linear-gradient(135deg,#0077b6,#00b4d8,#48cae4)",
+    title: "Notificación de confirmación",
+    desc: "Al agendar, recibes una notificación push en tu celular confirmando tu cita. Sin spam, solo lo que importa — cuando importa.",
+    tag: "Push notifications",
+  },
+  {
+    icon: BsPhone,
+    color: "#90e0ef",
+    bg: "linear-gradient(135deg,#03045e,#0096c7)",
+    title: "App sin descargar",
+    desc: "Esteticar es una PWA — se instala directo desde el navegador en iOS o Android. Funciona sin internet y carga al instante.",
+    tag: "PWA nativa",
+  },
+];
 
-      {/* Info */}
-      <div style={{ padding: "16px 20px 20px" }}>
-        <p style={{ color: "#fff", fontSize: 22, fontWeight: 900, lineHeight: 1.1, marginBottom: 8 }}>
-          {service.name}
+function FeaturesSection() {
+  return (
+    <div style={{ padding: "0 16px" }}>
+      <FadeIn>
+        <SectionLabel text="Tecnología" />
+        <h2 style={{ color: "#03045e", fontSize: 28, fontWeight: 900, marginBottom: 4, lineHeight: 1.1 }}>
+          Todo en un solo lugar
+        </h2>
+        <p style={{ color: "#90a0b7", fontSize: 14, fontWeight: 500, marginBottom: 22, lineHeight: 1.5 }}>
+          Diseñado para darte la mejor experiencia desde tu celular.
         </p>
-        <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, lineHeight: 1.5, marginBottom: 14, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-          {service.description}
-        </p>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 5,
-            background: "rgba(255,255,255,0.12)", borderRadius: 20,
-            padding: "5px 12px", border: "1px solid rgba(255,255,255,0.15)",
-          }}>
-            <BsClock style={{ color: "#48cae4", fontSize: 11 }} />
-            <span style={{ color: "#48cae4", fontSize: 12, fontWeight: 700 }}>{service.durationMinutes} min</span>
-          </div>
-          <div style={{
-            background: "linear-gradient(135deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08))",
-            border: "1px solid rgba(255,255,255,0.3)",
-            borderRadius: 14, padding: "8px 16px",
-            display: "flex", alignItems: "center", gap: 6,
-            backdropFilter: "blur(8px)",
-          }}>
-            <span style={{ color: "#fff", fontWeight: 900, fontSize: 13 }}>Reservar</span>
-            <BsArrowRight style={{ color: "#48cae4", fontSize: 11 }} />
-          </div>
-        </div>
+      </FadeIn>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {FEATURES.map((f, i) => (
+          <FadeIn key={f.tag} delay={i * 0.08}>
+            <div style={{
+              borderRadius: 22, overflow: "hidden",
+              boxShadow: "0 4px 20px rgba(3,4,94,0.10)",
+              display: "flex", alignItems: "stretch",
+            }}>
+              {/* Color strip with icon */}
+              <div style={{
+                width: 72, flexShrink: 0,
+                background: f.bg,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <f.icon style={{ color: "#fff", fontSize: 24 }} />
+              </div>
+              {/* Content */}
+              <div style={{ flex: 1, background: "#fff", padding: "16px 18px" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", marginBottom: 6, padding: "2px 10px", borderRadius: 20, background: "rgba(0,119,182,0.08)", border: "1px solid rgba(0,119,182,0.15)" }}>
+                  <span style={{ fontSize: 9, fontWeight: 900, color: "#0077b6", textTransform: "uppercase", letterSpacing: "0.08em" }}>{f.tag}</span>
+                </div>
+                <p style={{ fontWeight: 900, fontSize: 15, color: "#03045e", marginBottom: 4 }}>{f.title}</p>
+                <p style={{ color: "#6b7a8d", fontSize: 12, lineHeight: 1.55 }}>{f.desc}</p>
+              </div>
+            </div>
+          </FadeIn>
+        ))}
       </div>
-    </motion.button>
+    </div>
   );
 }
 
-/* ─── LOCATION CARD ───────────────────────────────────────── */
-function LocationCard({ location, img, onClick, index }: any) {
+// ─── HOW IT WORKS ─────────────────────────────────────────────────────────────
+const STEPS = [
+  { n: "01", title: "Elige tu servicio", desc: "Básico, Camioneta o Detailing completo con interiores." },
+  { n: "02", title: "Selecciona fecha y hora", desc: "Calendario mensual + horarios disponibles en tiempo real." },
+  { n: "03", title: "El mapa te guía", desc: "Ve todos los autolavados cercanos ordenados por tu distancia GPS." },
+  { n: "04", title: "Listo — notificación enviada", desc: "Confirmas y recibes tu cita al instante en tu celular." },
+];
+
+function HowItWorks({ navigate }: { navigate: (p: string) => void }) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.97 }}
-      onClick={onClick}
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.07 }}
-      style={{
-        display: "flex", alignItems: "center", gap: 0,
-        borderRadius: 20, overflow: "hidden",
-        background: "#fff",
-        boxShadow: "0 4px 20px rgba(3,4,94,0.10)",
-        width: "100%", cursor: "pointer",
-        textAlign: "left",
-      }}
-    >
-      {/* Photo thumbnail */}
-      <div style={{ width: 88, height: 80, flexShrink: 0, position: "relative", overflow: "hidden" }}>
-        <img src={img} alt={location.name}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        <div style={{
-          position: "absolute", inset: 0,
-          background: "linear-gradient(90deg, transparent 60%, rgba(255,255,255,0.7) 100%)",
-        }} />
-      </div>
-      {/* Info */}
-      <div style={{ flex: 1, padding: "0 14px" }}>
-        <p style={{ color: "#03045e", fontWeight: 900, fontSize: 14, marginBottom: 3 }}>{location.name}</p>
-        <p style={{ color: "#90a0b7", fontSize: 11, lineHeight: 1.3, marginBottom: 5 }}>{location.address}</p>
-        <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-          <BsGeoAlt style={{ color: "#0077b6", fontSize: 10 }} />
-          <span style={{ color: "#0077b6", fontSize: 10, fontWeight: 700 }}>Ver en mapa</span>
+    <div style={{ padding: "0 16px" }}>
+      <FadeIn>
+        <SectionLabel text="El proceso" />
+        <h2 style={{ color: "#03045e", fontSize: 28, fontWeight: 900, marginBottom: 4, lineHeight: 1.1 }}>
+          Agenda en 2 minutos
+        </h2>
+        <p style={{ color: "#90a0b7", fontSize: 14, fontWeight: 500, marginBottom: 22, lineHeight: 1.5 }}>
+          Sin complicaciones. Sin llamadas. Sin esperas.
+        </p>
+      </FadeIn>
+
+      {/* Steps */}
+      <div style={{ position: "relative" }}>
+        {/* Vertical line */}
+        <div style={{ position: "absolute", left: 27, top: 18, bottom: 18, width: 2, background: "linear-gradient(180deg,#0077b6,#00b4d8,rgba(0,180,216,0))" }} />
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          {STEPS.map((s, i) => (
+            <FadeIn key={s.n} delay={i * 0.1}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 18, paddingBottom: 20 }}>
+                {/* Step number circle */}
+                <div style={{
+                  width: 54, height: 54, borderRadius: "50%", flexShrink: 0,
+                  background: i === 3
+                    ? "linear-gradient(135deg,#0077b6,#00b4d8)"
+                    : "#fff",
+                  border: `2px solid ${i === 3 ? "#0077b6" : "#e0e8f0"}`,
+                  boxShadow: i === 3 ? "0 4px 16px rgba(0,119,182,0.35)" : "0 2px 8px rgba(3,4,94,0.08)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  zIndex: 1, position: "relative",
+                }}>
+                  {i === 3
+                    ? <BsCheckCircleFill style={{ color: "#fff", fontSize: 20 }} />
+                    : <span style={{ fontWeight: 900, fontSize: 13, color: "#0077b6" }}>{s.n}</span>}
+                </div>
+                {/* Content */}
+                <div style={{ paddingTop: 14 }}>
+                  <p style={{ fontWeight: 900, fontSize: 15, color: "#03045e", marginBottom: 3 }}>{s.title}</p>
+                  <p style={{ color: "#90a0b7", fontSize: 13, lineHeight: 1.5 }}>{s.desc}</p>
+                </div>
+              </div>
+            </FadeIn>
+          ))}
         </div>
       </div>
-      {/* Arrow */}
-      <div style={{ padding: "0 16px 0 0" }}>
-        <BsArrowRight style={{ color: "#0077b6", fontSize: 14 }} />
-      </div>
-    </motion.button>
+
+      <FadeIn>
+        <motion.button
+          whileTap={{ scale: 0.97 }}
+          onClick={() => navigate("/book")}
+          style={{
+            width: "100%", height: 54, borderRadius: 18,
+            background: "linear-gradient(135deg,#0077b6,#00b4d8)",
+            border: "none", cursor: "pointer", fontFamily: "inherit",
+            color: "#fff", fontWeight: 900, fontSize: 16,
+            boxShadow: "0 6px 24px rgba(0,119,182,0.35)",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+          }}
+        >
+          Probar ahora <BsArrowRight style={{ fontSize: 15 }} />
+        </motion.button>
+      </FadeIn>
+    </div>
   );
 }
 
-/* ─── PAGE ────────────────────────────────────────────────── */
+// ─── DIFFERENTIATORS ─────────────────────────────────────────────────────────
+function Differentiators() {
+  const items = [
+    { icon: BsGeoAlt, title: "Red de autolavados", desc: "Múltiples sucursales en Cuernavaca y Morelos. Siempre hay uno cerca de ti." },
+    { icon: BsShieldFill, title: "Garantía de calidad", desc: "Si no quedas satisfecho, repetimos el lavado sin costo. Sin preguntas." },
+    { icon: BsCalendarCheck, title: "Sin filas ni esperas", desc: "Tu cita está reservada. Llegas, te atienden. Así de simple." },
+    { icon: BsPersonFill, title: "Lavadores verificados", desc: "Cada proveedor es evaluado y certificado por Esteticar antes de operar." },
+  ];
+
+  return (
+    <div style={{ padding: "0 16px" }}>
+      <FadeIn>
+        <SectionLabel text="Nuestros diferenciadores" />
+        <h2 style={{ color: "#03045e", fontSize: 28, fontWeight: 900, marginBottom: 20, lineHeight: 1.1 }}>
+          Por qué Esteticar<br />y no otro
+        </h2>
+      </FadeIn>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        {items.map((item, i) => (
+          <FadeIn key={item.title} delay={i * 0.07}>
+            <div style={{ background: "#fff", borderRadius: 20, padding: "18px 16px", boxShadow: "0 2px 12px rgba(3,4,94,0.07)" }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 13, marginBottom: 12,
+                background: "linear-gradient(135deg,#03045e,#0077b6)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <item.icon style={{ color: "#48cae4", fontSize: 16 }} />
+              </div>
+              <p style={{ fontWeight: 900, fontSize: 13, color: "#03045e", marginBottom: 5, lineHeight: 1.2 }}>{item.title}</p>
+              <p style={{ color: "#90a0b7", fontSize: 11, lineHeight: 1.5 }}>{item.desc}</p>
+            </div>
+          </FadeIn>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── QUIÉNES SOMOS ────────────────────────────────────────────────────────────
+function QuienesSomos() {
+  return (
+    <FadeIn>
+      <div style={{ margin: "0 16px", borderRadius: 26, overflow: "hidden", position: "relative" }}>
+        <img
+          src="https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=900&q=80"
+          alt="Esteticar team"
+          style={{ width: "100%", height: 220, objectFit: "cover", objectPosition: "center 30%", display: "block" }}
+        />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(3,4,94,0.2) 0%, rgba(3,4,94,0.95) 65%, #03045e 100%)" }} />
+        <div style={{ position: "absolute", bottom: 0, padding: "0 22px 24px" }}>
+          <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.16em", marginBottom: 6 }}>Quiénes somos</p>
+          <p style={{ color: "#fff", fontSize: 18, fontWeight: 900, lineHeight: 1.35, marginBottom: 10 }}>
+            Somos el marketplace de autolavados más completo de Morelos.
+          </p>
+          <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 13, lineHeight: 1.6 }}>
+            Conectamos a los mejores lavadores de la región con clientes que valoran su tiempo. Tecnología premium, precio justo, servicio garantizado.
+          </p>
+        </div>
+      </div>
+    </FadeIn>
+  );
+}
+
+// ─── SERVICES PREVIEW ─────────────────────────────────────────────────────────
+function ServicesPreview({ navigate }: { navigate: (p: string) => void }) {
+  const { data: services } = useListServices();
+  const imgs = [
+    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=75",
+    "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?w=600&q=75",
+    "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600&q=75",
+  ];
+
+  return (
+    <div style={{ padding: "0 16px" }}>
+      <FadeIn>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <div>
+            <SectionLabel text="Servicios" />
+            <h2 style={{ color: "#03045e", fontSize: 24, fontWeight: 900 }}>Nuestros lavados</h2>
+          </div>
+          <button onClick={() => navigate("/services")} style={{ background: "none", border: "none", cursor: "pointer", color: "#0077b6", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 4, fontFamily: "inherit" }}>
+            Ver todos <BsArrowRight style={{ fontSize: 11 }} />
+          </button>
+        </div>
+      </FadeIn>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {(services ?? [{}, {}, {}] as any[]).map((s: any, i: number) => (
+          <FadeIn key={i} delay={i * 0.07}>
+            <motion.button whileTap={{ scale: 0.97 }} onClick={() => navigate("/book")}
+              style={{ display: "flex", alignItems: "center", borderRadius: 20, overflow: "hidden", background: "#fff", boxShadow: "0 2px 12px rgba(3,4,94,0.08)", width: "100%", cursor: "pointer", textAlign: "left", border: "none" }}>
+              <div style={{ width: 80, height: 72, flexShrink: 0, overflow: "hidden", position: "relative" }}>
+                {s.name
+                  ? <img src={s.imageUrl?.startsWith("http") ? s.imageUrl : imgs[i % imgs.length]} alt={s.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  : <div style={{ width: "100%", height: "100%", background: `linear-gradient(135deg,rgba(3,4,94,${0.8 - i * 0.1}),#0077b6)`, opacity: 0.3 }} />}
+              </div>
+              <div style={{ flex: 1, padding: "0 16px" }}>
+                <p style={{ fontWeight: 900, fontSize: 14, color: "#03045e", marginBottom: 3 }}>{s.name ?? "..."}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {s.durationMinutes && <span style={{ fontSize: 11, color: "#90a0b7", fontWeight: 600 }}>{s.durationMinutes} min</span>}
+                  {s.price && <span style={{ fontWeight: 900, fontSize: 15, color: "#0077b6" }}>${Number(s.price).toLocaleString()}</span>}
+                </div>
+              </div>
+              <BsArrowRight style={{ color: "#0077b6", fontSize: 14, marginRight: 16, flexShrink: 0 }} />
+            </motion.button>
+          </FadeIn>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── PWA INSTALL ──────────────────────────────────────────────────────────────
+function PWAInstallSection() {
+  const { platform, prompt, isInstalled } = usePWA();
+  const [expanded, setExpanded] = useState<"ios" | "android" | null>(null);
+
+  const install = async () => {
+    if (prompt) {
+      prompt.prompt();
+      await prompt.userChoice;
+    }
+  };
+
+  if (isInstalled) return null;
+
+  return (
+    <FadeIn>
+      <div style={{ margin: "0 16px" }}>
+        {/* Header card */}
+        <div style={{ borderRadius: "22px 22px 0 0", background: "linear-gradient(135deg,#03045e,#0077b6,#00b4d8)", padding: "24px 22px 20px", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, borderRadius: "50%", border: "1px solid rgba(255,255,255,0.1)", background: "rgba(72,202,228,0.1)" }} />
+          <SectionLabel text="PWA · App gratis" />
+          <h2 style={{ color: "#fff", fontSize: 24, fontWeight: 900, marginBottom: 6, lineHeight: 1.15 }}>
+            Instala Esteticar<br />sin App Store
+          </h2>
+          <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 13, fontWeight: 500, lineHeight: 1.55, marginBottom: 18 }}>
+            Es una PWA — Progressive Web App. Se instala directo desde tu navegador, ocupa casi nada y funciona como app nativa.
+          </p>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[
+              { icon: BsCheckCircleFill, text: "Sin descargar nada" },
+              { icon: BsCheckCircleFill, text: "Actualizaciones automáticas" },
+              { icon: BsCheckCircleFill, text: "Funciona sin internet" },
+            ].map(({ icon: Icon, text }) => (
+              <div key={text} style={{ flex: 1, textAlign: "center" }}>
+                <Icon style={{ color: "#48cae4", fontSize: 16, marginBottom: 4 }} />
+                <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 700, lineHeight: 1.3 }}>{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Platform cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", background: "#fff", borderRadius: "0 0 22px 22px", boxShadow: "0 8px 24px rgba(3,4,94,0.12)" }}>
+
+          {/* iOS */}
+          <div style={{ padding: "18px 16px", borderRight: "1px solid #f0f4f8" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 10, background: "#000", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <BsApple style={{ color: "#fff", fontSize: 16 }} />
+              </div>
+              <p style={{ fontWeight: 900, fontSize: 13, color: "#03045e" }}>iPhone / iPad</p>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[
+                { n: 1, text: <>Abre en <strong>Safari</strong></> },
+                { n: 2, text: <><HiShare style={{ display: "inline", verticalAlign: "middle", fontSize: 14 }} /> Compartir</> },
+                { n: 3, text: <>"Añadir a pantalla"</> },
+                { n: 4, text: <><strong>"Añadir"</strong> — listo</> },
+              ].map(({ n, text }) => (
+                <div key={n} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                  <div style={{ width: 20, height: 20, borderRadius: "50%", background: "linear-gradient(135deg,#03045e,#0077b6)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <span style={{ color: "#fff", fontSize: 9, fontWeight: 900 }}>{n}</span>
+                  </div>
+                  <p style={{ color: "#6b7a8d", fontSize: 11, lineHeight: 1.4 }}>{text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Android */}
+          <div style={{ padding: "18px 16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 10, background: "#3ddc84", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <BsAndroid2 style={{ color: "#fff", fontSize: 16 }} />
+              </div>
+              <p style={{ fontWeight: 900, fontSize: 13, color: "#03045e" }}>Android</p>
+            </div>
+            {platform === "android" && prompt ? (
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={install}
+                style={{ width: "100%", height: 44, borderRadius: 14, background: "linear-gradient(135deg,#3ddc84,#0077b6)", border: "none", cursor: "pointer", color: "#fff", fontWeight: 800, fontSize: 13, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+              >
+                <BsAndroid2 style={{ fontSize: 14 }} />
+                Instalar ahora
+              </motion.button>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {[
+                  { n: 1, text: <>Abre en <strong>Chrome</strong></> },
+                  { n: 2, text: <>Menú ⋮ arriba</> },
+                  { n: 3, text: <>"Añadir a pantalla"</> },
+                  { n: 4, text: <><strong>"Añadir"</strong> — listo</> },
+                ].map(({ n, text }) => (
+                  <div key={n} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                    <div style={{ width: 20, height: 20, borderRadius: "50%", background: "linear-gradient(135deg,#3ddc84,#0096c7)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <span style={{ color: "#fff", fontSize: 9, fontWeight: 900 }}>{n}</span>
+                    </div>
+                    <p style={{ color: "#6b7a8d", fontSize: 11, lineHeight: 1.4 }}>{text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </FadeIn>
+  );
+}
+
+// ─── FINAL CTA ─────────────────────────────────────────────────────────────────
+function FinalCTA({ navigate }: { navigate: (p: string) => void }) {
+  return (
+    <FadeIn>
+      <div style={{ margin: "0 16px", borderRadius: 26, overflow: "hidden", position: "relative" }}>
+        <div style={{ background: "linear-gradient(145deg,#020b1a 0%,#03045e 40%,#0077b6 75%,#00b4d8 100%)", padding: "32px 22px 34px", position: "relative", overflow: "hidden" }}>
+          <motion.div
+            animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.35, 0.2] }}
+            transition={{ duration: 3, repeat: Infinity }}
+            style={{ position: "absolute", top: -30, right: -30, width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle, rgba(72,202,228,0.5) 0%, transparent 70%)" }}
+          />
+          <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 10, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.16em", marginBottom: 10, position: "relative", zIndex: 1 }}>Empieza ahora</p>
+          <h2 style={{ color: "#fff", fontSize: 28, fontWeight: 900, lineHeight: 1.1, marginBottom: 10, position: "relative", zIndex: 1 }}>
+            Tu auto te lo<br />va a agradecer.
+          </h2>
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 14, lineHeight: 1.55, marginBottom: 24, position: "relative", zIndex: 1 }}>
+            Agenda en 2 minutos. Sin llamadas. Sin cuentas complicadas.
+          </p>
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => navigate("/book")}
+            style={{
+              width: "100%", height: 56, borderRadius: 18,
+              background: "#fff", color: "#03045e",
+              fontWeight: 900, fontSize: 16, border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              fontFamily: "inherit",
+              boxShadow: "0 8px 28px rgba(255,255,255,0.2)",
+              position: "relative", zIndex: 1,
+            }}
+          >
+            Agendar mi lavado <BsArrowRight style={{ color: "#0077b6", fontSize: 16 }} />
+          </motion.button>
+        </div>
+      </div>
+    </FadeIn>
+  );
+}
+
+// ─── PAGE ─────────────────────────────────────────────────────────────────────
 export default function Home() {
   const [, navigate] = useLocation();
   const { user, isAuthenticated } = useAuth();
 
-  const { data: services } = useListServices();
-  const { data: locations } = useListLocations();
-  useGetDashboardSummary({
-    query: {
-      queryKey: getGetDashboardSummaryQueryKey(),
-      enabled: isAuthenticated && user?.role === "customer",
-    },
-  });
-
   return (
-    <div className="desktop-content" style={{ minHeight: "100%", background: "#f0f4f8", paddingBottom: 20 }}>
+    <div style={{ minHeight: "100%", background: "#f0f4f8", overflowX: "hidden" }}>
 
-      {/* ── HERO ── */}
-      <div className="desktop-hero">
-        <Hero isAuthenticated={isAuthenticated} navigate={navigate} name={user?.name} />
+      {/* ── HERO (full screen) ── */}
+      <Hero navigate={navigate} isAuthenticated={isAuthenticated} name={user?.name} />
+
+      {/* ── STATS (overlapping footer of hero) ── */}
+      <div style={{ marginTop: -20, paddingBottom: 36 }}>
+        <FadeIn>
+          <StatsStrip />
+        </FadeIn>
       </div>
 
-      {/* ── STATS ── */}
-      <div className="desktop-px">
-        <StatsStrip />
+      {/* ── FEATURES ── */}
+      <div style={{ paddingBottom: 40 }}>
+        <FeaturesSection />
       </div>
 
-      {/* ── SERVICES TITLE ── */}
-      <div className="desktop-px" style={{ padding: "28px 20px 14px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-        <div>
-          <p style={{ color: "#0077b6", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 3 }}>
-            Nuestros servicios
-          </p>
-          <p style={{ color: "#03045e", fontSize: 24, fontWeight: 900, lineHeight: 1 }}>Destacados</p>
-        </div>
-        <button onClick={() => navigate("/services")}
-          style={{ color: "#0077b6", fontSize: 13, fontWeight: 700, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontFamily: "inherit" }}>
-          Ver todos <BsArrowRight style={{ fontSize: 11 }} />
-        </button>
+      {/* ── HOW IT WORKS ── */}
+      <div style={{ paddingBottom: 40 }}>
+        <HowItWorks navigate={navigate} />
       </div>
 
-      {/* ── SERVICES SCROLL ── */}
-      <div className="desktop-scroll-to-grid desktop-px" style={{
-        display: "flex", gap: 14, overflowX: "auto",
-        scrollSnapType: "x mandatory", padding: "4px 20px 8px",
-        scrollBehavior: "smooth",
-      }}>
-        {!services
-          ? GRADIENTS.map((g, i) => (
-            <div key={i} style={{
-              flexShrink: 0, width: "82vw", maxWidth: 340, height: 340,
-              borderRadius: 26, background: g, opacity: 0.25,
-              scrollSnapAlign: "start",
-            }} />
-          ))
-          : services.map((s, i) => (
-            <ServiceCard
-              key={s.id} service={s}
-              gradient={GRADIENTS[i % GRADIENTS.length]}
-              imgFallback={SERVICE_IMGS[i % SERVICE_IMGS.length]}
-              onClick={() => navigate("/book")}
-              index={i}
-            />
-          ))
-        }
+      {/* ── WHO WE ARE ── */}
+      <div style={{ paddingBottom: 40 }}>
+        <QuienesSomos />
       </div>
 
-      {/* ── CITY BANNER ── */}
-      <div className="desktop-px" style={{ padding: "20px 16px 0" }}>
-        <div style={{
-          borderRadius: 22, overflow: "hidden", position: "relative", height: 120,
-        }}>
-          <img
-            src="https://images.unsplash.com/photo-1534430480872-3498386e7856?w=900&q=75"
-            alt="Cuernavaca"
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-          />
-          <div style={{
-            position: "absolute", inset: 0,
-            background: "linear-gradient(90deg,rgba(3,4,94,0.85) 0%,rgba(0,119,182,0.6) 60%,transparent 100%)",
-          }} />
-          <div style={{ position: "absolute", top: "50%", left: 20, transform: "translateY(-50%)" }}>
-            <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em" }}>Operamos en</p>
-            <p style={{ color: "#fff", fontSize: 22, fontWeight: 900, lineHeight: 1.1 }}>Cuernavaca,<br />Morelos</p>
-          </div>
-        </div>
+      {/* ── DIFFERENTIATORS ── */}
+      <div style={{ paddingBottom: 40 }}>
+        <Differentiators />
       </div>
 
-      {/* ── LOCATIONS TITLE ── */}
-      <div className="desktop-px" style={{ padding: "24px 20px 14px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-        <div>
-          <p style={{ color: "#0077b6", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 3 }}>
-            Dónde estamos
-          </p>
-          <p style={{ color: "#03045e", fontSize: 24, fontWeight: 900, lineHeight: 1 }}>Sucursales</p>
-        </div>
-        <button onClick={() => navigate("/locations")}
-          style={{ color: "#0077b6", fontSize: 13, fontWeight: 700, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontFamily: "inherit" }}>
-          Ver mapa <BsArrowRight style={{ fontSize: 11 }} />
-        </button>
+      {/* ── SERVICES ── */}
+      <div style={{ paddingBottom: 40 }}>
+        <ServicesPreview navigate={navigate} />
       </div>
 
-      {/* ── LOCATIONS ── */}
-      <div className="desktop-px desktop-grid-2" style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-        {!locations
-          ? [1, 2, 3].map(i => <div key={i} style={{ height: 80, borderRadius: 20, background: "#e0e8f0" }} />)
-          : locations.map((l, i) => (
-            <LocationCard
-              key={l.id} location={l}
-              img={LOCATION_IMGS[i % LOCATION_IMGS.length]}
-              onClick={() => navigate("/book")}
-              index={i}
-            />
-          ))
-        }
+      {/* ── PWA INSTALL ── */}
+      <div style={{ paddingBottom: 40 }}>
+        <PWAInstallSection />
       </div>
 
-      {/* ── PWA INSTALL BANNER ── */}
-      <div style={{ paddingTop: 20 }}>
-        <PWABanner />
+      {/* ── FINAL CTA ── */}
+      <div style={{ paddingBottom: 100 }}>
+        <FinalCTA navigate={navigate} />
       </div>
-
-      {/* ── PUBLIC CTA ── */}
-      {!isAuthenticated && (
-        <div className="desktop-px" style={{ padding: "20px 16px 0" }}>
-          <div style={{ position: "relative", borderRadius: 26, overflow: "hidden" }}>
-            {/* Photo bg */}
-            <img
-              src="https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=900&q=80"
-              alt="Luxury car"
-              style={{ width: "100%", height: 180, objectFit: "cover", objectPosition: "center 30%" }}
-            />
-            <div style={{
-              position: "absolute", inset: 0,
-              background: "linear-gradient(180deg,rgba(3,4,94,0.4) 0%,rgba(3,4,94,0.92) 60%,#03045e 100%)",
-            }} />
-            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "20px 20px 22px" }}>
-              <p style={{ color: "#fff", fontSize: 20, fontWeight: 900, marginBottom: 4 }}>Reserva en 2 minutos</p>
-              <p style={{ color: "rgba(144,224,239,0.75)", fontSize: 12, marginBottom: 16 }}>
-                Crea tu cuenta y agenda tu primer lavado.
-              </p>
-              <div style={{ display: "flex", gap: 10 }}>
-                <motion.button whileTap={{ scale: 0.96 }} onClick={() => navigate("/register")} style={{
-                  flex: 1, height: 46, borderRadius: 14,
-                  background: "linear-gradient(135deg,#00b4d8,#0077b6)",
-                  color: "#fff", fontWeight: 900, fontSize: 14,
-                  border: "none", cursor: "pointer", fontFamily: "inherit",
-                  boxShadow: "0 4px 16px rgba(0,119,182,0.4)",
-                }}>Crear cuenta</motion.button>
-                <motion.button whileTap={{ scale: 0.96 }} onClick={() => navigate("/login")} style={{
-                  flex: 1, height: 46, borderRadius: 14,
-                  background: "rgba(255,255,255,0.12)",
-                  border: "1px solid rgba(255,255,255,0.2)",
-                  color: "rgba(255,255,255,0.8)", fontWeight: 700, fontSize: 14,
-                  cursor: "pointer", fontFamily: "inherit",
-                }}>Iniciar sesión</motion.button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
