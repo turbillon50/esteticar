@@ -13,9 +13,24 @@ import { useAuth } from "@/components/AuthProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { BsArrowLeft, BsCheckCircleFill, BsClock, BsGeoAlt, BsCalendar3 } from "react-icons/bs";
+import {
+  BsArrowLeft, BsCheckCircleFill, BsClock,
+  BsGeoAlt, BsArrowRight, BsLockFill,
+} from "react-icons/bs";
 
 const STEPS = ["Servicio", "Sucursal", "Fecha", "Horario", "Confirmar"];
+
+const GRADIENTS = [
+  "linear-gradient(145deg,#03045e 0%,#0077b6 45%,#00b4d8 80%,#90e0ef 100%)",
+  "linear-gradient(145deg,#005f73 0%,#0a9396 50%,#48cae4 85%,#caf0f8 100%)",
+  "linear-gradient(145deg,#10002b 0%,#3a0ca3 45%,#4cc9f0 100%)",
+];
+
+const FALLBACK_IMGS = [
+  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=75",
+  "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?w=600&q=75",
+  "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=600&q=75",
+];
 
 function formatDate(d: string) {
   return new Date(d + "T00:00:00").toLocaleDateString("es-MX", {
@@ -30,12 +45,6 @@ function getNext7Days() {
     return d.toISOString().split("T")[0];
   });
 }
-
-const slideVariants = {
-  enter: { opacity: 0, x: 30 },
-  center: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -20 },
-};
 
 export default function Book() {
   const [, navigate] = useLocation();
@@ -67,33 +76,11 @@ export default function Book() {
         queryClient.invalidateQueries({ queryKey: getListBookingsQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
         navigate("/bookings");
-        toast.success("Cita reservada");
+        toast.success("Cita reservada con éxito");
       },
       onError: (err: any) => toast.error(err?.message ?? "Error al reservar"),
     },
   });
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "#f5f6f8" }}>
-        <div
-          className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4"
-          style={{ background: "linear-gradient(135deg, #0A1628, #0d2240)" }}
-        >
-          <BsCalendar3 className="text-white text-2xl" />
-        </div>
-        <h2 className="text-xl font-black mb-2 text-center" style={{ color: "#0A1628" }}>Inicia sesión para reservar</h2>
-        <p className="text-sm text-center mb-6" style={{ color: "#9ca3af" }}>Necesitas una cuenta para agendar tu lavado</p>
-        <button
-          onClick={() => navigate("/login")}
-          className="w-full h-12 rounded-2xl font-black text-white"
-          style={{ background: "linear-gradient(135deg, #0A1628, #0d2240)" }}
-        >
-          Iniciar sesión
-        </button>
-      </div>
-    );
-  }
 
   const handleConfirm = () => {
     createBooking.mutate({
@@ -107,139 +94,231 @@ export default function Book() {
     });
   };
 
+  const progress = ((step + 1) / STEPS.length) * 100;
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#f5f6f8" }}>
+    <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", background: "#f0f4f8" }}>
 
-      {/* Header */}
-      <div
-        className="relative overflow-hidden px-5 pt-14 pb-6"
-        style={{ background: "linear-gradient(150deg, #0A1628 0%, #0d2240 80%)" }}
-      >
-        <div className="absolute top-0 right-0 w-40 h-40 rounded-full opacity-10"
-          style={{ background: "radial-gradient(circle, #00B4D8, transparent 70%)", transform: "translate(30%, -30%)" }} />
+      {/* ── HEADER ── */}
+      <div style={{
+        background: "linear-gradient(150deg,#020b1a 0%,#03045e 50%,#0077b6 100%)",
+        padding: "52px 20px 20px",
+        position: "relative", overflow: "hidden", flexShrink: 0,
+      }}>
+        {/* Bubble deco */}
+        <div style={{
+          position: "absolute", top: -30, right: -30, width: 120, height: 120,
+          borderRadius: "50%", border: "1px solid rgba(255,255,255,0.12)",
+          background: "rgba(0,180,216,0.1)", pointerEvents: "none",
+        }} />
+        <div style={{
+          position: "absolute", bottom: -20, right: 60, width: 70, height: 70,
+          borderRadius: "50%", border: "1px solid rgba(255,255,255,0.1)",
+          background: "rgba(72,202,228,0.08)", pointerEvents: "none",
+        }} />
 
-        <div className="flex items-center gap-3 mb-5 relative z-10">
-          <button
+        {/* Back + Step */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20, position: "relative", zIndex: 1 }}>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
             onClick={() => step > 0 ? setStep(step - 1) : navigate("/")}
-            className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: "rgba(255,255,255,0.1)" }}
+            style={{
+              width: 40, height: 40, borderRadius: "50%",
+              background: "rgba(255,255,255,0.12)",
+              border: "1px solid rgba(255,255,255,0.2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0, cursor: "pointer",
+            }}
           >
-            <BsArrowLeft className="text-white" />
-          </button>
+            <BsArrowLeft style={{ color: "#fff", fontSize: 16 }} />
+          </motion.button>
           <div>
-            <p className="text-white/50 text-xs font-medium">Paso {step + 1} de {STEPS.length}</p>
-            <p className="text-white font-black text-lg">{STEPS[step]}</p>
+            <p style={{ color: "rgba(72,202,228,0.8)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              Paso {step + 1} de {STEPS.length}
+            </p>
+            <p style={{ color: "#fff", fontWeight: 900, fontSize: 20, lineHeight: 1.1 }}>{STEPS[step]}</p>
           </div>
         </div>
 
         {/* Progress bar */}
-        <div
-          className="h-1 rounded-full relative z-10 overflow-hidden"
-          style={{ background: "rgba(255,255,255,0.15)" }}
-        >
+        <div style={{
+          height: 4, borderRadius: 4,
+          background: "rgba(255,255,255,0.15)",
+          position: "relative", zIndex: 1, overflow: "hidden",
+        }}>
           <motion.div
-            className="h-full rounded-full"
-            style={{ background: "linear-gradient(90deg, #00B4D8, #0094b3)" }}
-            animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            style={{
+              height: "100%", borderRadius: 4,
+              background: "linear-gradient(90deg,#48cae4,#00b4d8)",
+              boxShadow: "0 0 8px rgba(0,180,216,0.6)",
+            }}
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
           />
+        </div>
+
+        {/* Step indicator dots */}
+        <div style={{ display: "flex", gap: 6, marginTop: 12, position: "relative", zIndex: 1 }}>
+          {STEPS.map((s, i) => (
+            <div key={s} style={{
+              flex: 1, height: 2, borderRadius: 2,
+              background: i <= step ? "#48cae4" : "rgba(255,255,255,0.15)",
+              transition: "background 0.3s",
+            }} />
+          ))}
         </div>
       </div>
 
-      {/* Step content */}
-      <div className="flex-1 overflow-y-auto">
+      {/* ── STEP CONTENT ── */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="px-4 py-5"
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -16 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            style={{ padding: "20px 16px 32px" }}
           >
 
-            {/* Step 0: Service */}
+            {/* ── STEP 0: Servicio ── */}
             {step === 0 && (
-              <div className="space-y-3">
-                {services?.map(service => {
-                  const sel = selectedService?.id === service.id;
-                  return (
-                    <motion.button
-                      key={service.id}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => { setSelectedService(service); setStep(1); }}
-                      className="w-full flex items-center gap-4 p-4 rounded-3xl text-left"
-                      style={{
-                        background: "#ffffff",
-                        border: sel ? "2px solid #00B4D8" : "2px solid transparent",
-                        boxShadow: "0 2px 12px rgba(10,22,40,0.07)",
-                      }}
-                    >
-                      <div
-                        className="w-14 h-14 rounded-2xl flex-shrink-0 overflow-hidden flex items-center justify-center"
-                        style={{ background: sel ? "rgba(0,180,216,0.1)" : "#f5f6f8" }}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <p style={{ color: "#90a0b7", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                  Elige el tipo de lavado que necesitas
+                </p>
+                {!services
+                  ? [1, 2, 3].map(i => <div key={i} style={{ height: 100, borderRadius: 20, background: "#e0e8f0" }} />)
+                  : services.map((service, i) => {
+                    const img = service.imageUrl?.startsWith("http") ? service.imageUrl : FALLBACK_IMGS[i % FALLBACK_IMGS.length];
+                    return (
+                      <motion.button
+                        key={service.id}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => { setSelectedService(service); setStep(1); }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 0,
+                          borderRadius: 22, overflow: "hidden",
+                          background: selectedService?.id === service.id
+                            ? GRADIENTS[i % GRADIENTS.length]
+                            : "#fff",
+                          boxShadow: selectedService?.id === service.id
+                            ? "0 8px 28px rgba(3,4,94,0.25)"
+                            : "0 2px 12px rgba(3,4,94,0.08)",
+                          border: selectedService?.id === service.id
+                            ? "2px solid rgba(72,202,228,0.5)"
+                            : "2px solid transparent",
+                          cursor: "pointer", textAlign: "left",
+                        }}
                       >
-                        {service.imageUrl
-                          ? <img src={service.imageUrl} alt={service.name} className="w-full h-full object-cover" />
-                          : <span className="text-2xl font-black" style={{ color: "#00B4D8", opacity: 0.5 }}>✦</span>
-                        }
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-black text-sm" style={{ color: "#0A1628" }}>{service.name}</p>
-                        <div className="flex items-center gap-3 mt-1">
-                          <div className="flex items-center gap-1">
-                            <BsClock className="text-[10px]" style={{ color: "#9ca3af" }} />
-                            <span className="text-xs font-medium" style={{ color: "#9ca3af" }}>{service.durationMinutes} min</span>
-                          </div>
-                          <span className="text-sm font-black" style={{ color: "#00B4D8" }}>${Number(service.price).toLocaleString()}</span>
+                        {/* Image */}
+                        <div style={{ width: 90, height: 90, flexShrink: 0, overflow: "hidden", position: "relative" }}>
+                          <img src={img} alt={service.name}
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                          {selectedService?.id === service.id && (
+                            <div style={{
+                              position: "absolute", inset: 0,
+                              background: "rgba(3,4,94,0.3)",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                            }}>
+                              <BsCheckCircleFill style={{ color: "#48cae4", fontSize: 22 }} />
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      {sel && <BsCheckCircleFill className="text-xl flex-shrink-0" style={{ color: "#00B4D8" }} />}
-                    </motion.button>
-                  );
-                })}
+                        {/* Info */}
+                        <div style={{ flex: 1, padding: "0 16px" }}>
+                          <p style={{
+                            fontWeight: 900, fontSize: 15, marginBottom: 4,
+                            color: selectedService?.id === service.id ? "#fff" : "#03045e",
+                          }}>{service.name}</p>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                              <BsClock style={{ color: selectedService?.id === service.id ? "rgba(144,224,239,0.7)" : "#90a0b7", fontSize: 10 }} />
+                              <span style={{ color: selectedService?.id === service.id ? "rgba(144,224,239,0.8)" : "#90a0b7", fontSize: 12, fontWeight: 600 }}>
+                                {service.durationMinutes} min
+                              </span>
+                            </div>
+                            <span style={{
+                              fontWeight: 900, fontSize: 17,
+                              color: selectedService?.id === service.id ? "#48cae4" : "#0077b6",
+                            }}>
+                              ${Number(service.price).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ paddingRight: 16, flexShrink: 0 }}>
+                          <BsArrowRight style={{
+                            color: selectedService?.id === service.id ? "#48cae4" : "#c0ccd8",
+                            fontSize: 14,
+                          }} />
+                        </div>
+                      </motion.button>
+                    );
+                  })
+                }
               </div>
             )}
 
-            {/* Step 1: Location */}
+            {/* ── STEP 1: Sucursal ── */}
             {step === 1 && (
-              <div className="space-y-3">
-                {locations?.filter(l => l.isActive).map(loc => {
-                  const sel = selectedLocation?.id === loc.id;
-                  return (
-                    <motion.button
-                      key={loc.id}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => { setSelectedLocation(loc); setStep(2); }}
-                      className="w-full flex items-start gap-4 p-4 rounded-3xl text-left"
-                      style={{
-                        background: "#ffffff",
-                        border: sel ? "2px solid #00B4D8" : "2px solid transparent",
-                        boxShadow: "0 2px 12px rgba(10,22,40,0.07)",
-                      }}
-                    >
-                      <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-                        style={{ background: sel ? "rgba(0,180,216,0.15)" : "#f5f6f8" }}
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <p style={{ color: "#90a0b7", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                  Elige el autolavado más cercano
+                </p>
+                {!locations
+                  ? [1, 2, 3].map(i => <div key={i} style={{ height: 80, borderRadius: 20, background: "#e0e8f0" }} />)
+                  : locations.filter(l => l.isActive).map(loc => {
+                    const sel = selectedLocation?.id === loc.id;
+                    return (
+                      <motion.button
+                        key={loc.id}
+                        whileTap={{ scale: 0.97 }}
+                        onClick={() => { setSelectedLocation(loc); setStep(2); }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: 0,
+                          borderRadius: 20, overflow: "hidden", cursor: "pointer",
+                          background: sel ? "linear-gradient(135deg,#03045e,#0077b6)" : "#fff",
+                          boxShadow: sel ? "0 6px 24px rgba(3,4,94,0.25)" : "0 2px 10px rgba(3,4,94,0.07)",
+                          border: sel ? "2px solid rgba(72,202,228,0.4)" : "2px solid transparent",
+                          textAlign: "left",
+                        }}
                       >
-                        <BsGeoAlt className="text-xl" style={{ color: sel ? "#00B4D8" : "#9ca3af" }} />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-black text-sm" style={{ color: "#0A1628" }}>{loc.name}</p>
-                        <p className="text-xs mt-0.5" style={{ color: "#9ca3af" }}>{loc.address}</p>
-                        <p className="text-xs font-semibold mt-1" style={{ color: "#00B4D8" }}>{loc.openTime} – {loc.closeTime}</p>
-                      </div>
-                      {sel && <BsCheckCircleFill className="text-xl flex-shrink-0" style={{ color: "#00B4D8" }} />}
-                    </motion.button>
-                  );
-                })}
+                        <div style={{
+                          width: 60, height: 74, flexShrink: 0,
+                          background: sel ? "rgba(0,180,216,0.2)" : "#f0f4f8",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                          <BsGeoAlt style={{ color: sel ? "#48cae4" : "#0077b6", fontSize: 22 }} />
+                        </div>
+                        <div style={{ flex: 1, padding: "0 14px" }}>
+                          <p style={{ fontWeight: 900, fontSize: 14, marginBottom: 3, color: sel ? "#fff" : "#03045e" }}>
+                            {loc.name}
+                          </p>
+                          <p style={{ fontSize: 11, color: sel ? "rgba(255,255,255,0.6)" : "#90a0b7", marginBottom: 4 }}>
+                            {loc.address}
+                          </p>
+                          {loc.openTime && (
+                            <p style={{ fontSize: 11, fontWeight: 700, color: sel ? "#48cae4" : "#0077b6" }}>
+                              {loc.openTime} – {loc.closeTime}
+                            </p>
+                          )}
+                        </div>
+                        <div style={{ paddingRight: 16 }}>
+                          <BsArrowRight style={{ color: sel ? "#48cae4" : "#c0ccd8", fontSize: 14 }} />
+                        </div>
+                      </motion.button>
+                    );
+                  })
+                }
               </div>
             )}
 
-            {/* Step 2: Date */}
+            {/* ── STEP 2: Fecha ── */}
             {step === 2 && (
-              <div className="space-y-3">
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <p style={{ color: "#90a0b7", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                  ¿Cuándo quieres tu cita?
+                </p>
                 {getNext7Days().map(date => {
                   const d = new Date(date + "T00:00:00");
                   const sel = selectedDate === date;
@@ -249,57 +328,69 @@ export default function Book() {
                       key={date}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => { setSelectedDate(date); setStep(3); }}
-                      className="w-full flex items-center gap-4 p-4 rounded-3xl text-left"
                       style={{
-                        background: sel ? "#0A1628" : "#ffffff",
-                        boxShadow: "0 2px 12px rgba(10,22,40,0.07)",
+                        display: "flex", alignItems: "center", gap: 16,
+                        borderRadius: 18, padding: "14px 18px", cursor: "pointer",
+                        background: sel ? "linear-gradient(135deg,#03045e,#0077b6)" : "#fff",
+                        boxShadow: sel ? "0 6px 24px rgba(3,4,94,0.25)" : "0 2px 10px rgba(3,4,94,0.07)",
+                        textAlign: "left",
                       }}
                     >
-                      <div
-                        className="w-12 h-12 rounded-2xl flex flex-col items-center justify-center flex-shrink-0"
-                        style={{ background: sel ? "rgba(0,180,216,0.2)" : "#f5f6f8" }}
-                      >
-                        <span className="text-[10px] font-bold uppercase" style={{ color: sel ? "#00B4D8" : "#9ca3af" }}>
+                      <div style={{
+                        width: 48, height: 52, borderRadius: 14, flexShrink: 0,
+                        background: sel ? "rgba(0,180,216,0.2)" : "#f0f4f8",
+                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <span style={{ fontSize: 9, fontWeight: 800, textTransform: "uppercase", color: sel ? "#48cae4" : "#90a0b7", letterSpacing: "0.08em" }}>
                           {d.toLocaleDateString("es-MX", { weekday: "short" })}
                         </span>
-                        <span className="text-lg font-black leading-none" style={{ color: sel ? "#ffffff" : "#0A1628" }}>
+                        <span style={{ fontSize: 22, fontWeight: 900, lineHeight: 1, color: sel ? "#fff" : "#03045e" }}>
                           {d.getDate()}
                         </span>
                       </div>
-                      <div>
-                        <p className="font-black text-sm capitalize" style={{ color: sel ? "#ffffff" : "#0A1628" }}>
-                          {d.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "short" })}
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontWeight: 800, fontSize: 14, color: sel ? "#fff" : "#03045e", textTransform: "capitalize" }}>
+                          {d.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })}
                         </p>
                         {isToday && (
-                          <span className="text-xs font-bold" style={{ color: "#00B4D8" }}>Hoy</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "#48cae4" }}>Hoy</span>
                         )}
                       </div>
-                      {sel && <BsCheckCircleFill className="text-xl ml-auto flex-shrink-0" style={{ color: "#00B4D8" }} />}
+                      {sel && <BsCheckCircleFill style={{ color: "#48cae4", fontSize: 18, flexShrink: 0 }} />}
                     </motion.button>
                   );
                 })}
               </div>
             )}
 
-            {/* Step 3: Timeslot */}
+            {/* ── STEP 3: Horario ── */}
             {step === 3 && (
               <div>
-                <p className="text-sm font-semibold mb-4 capitalize" style={{ color: "#6b7280" }}>
+                <p style={{ color: "#90a0b7", fontSize: 13, fontWeight: 600, marginBottom: 14, textTransform: "capitalize" }}>
                   {selectedDate ? formatDate(selectedDate) : ""}
                 </p>
                 {!timeslots ? (
-                  <div className="grid grid-cols-3 gap-2">
-                    {Array.from({ length: 9 }).map((_, i) => (
-                      <div key={i} className="h-14 rounded-2xl bg-white animate-pulse" />
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <div key={i} style={{ height: 56, borderRadius: 16, background: "#e0e8f0" }} />
                     ))}
                   </div>
                 ) : timeslots.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="font-black mb-1" style={{ color: "#0A1628" }}>Sin horarios</p>
-                    <p className="text-sm" style={{ color: "#9ca3af" }}>Prueba otra fecha</p>
+                  <div style={{ textAlign: "center", padding: "48px 0" }}>
+                    <p style={{ fontWeight: 900, fontSize: 16, color: "#03045e", marginBottom: 6 }}>Sin horarios disponibles</p>
+                    <p style={{ color: "#90a0b7", fontSize: 13, marginBottom: 20 }}>Prueba con otra fecha o sucursal</p>
+                    <motion.button whileTap={{ scale: 0.96 }} onClick={() => setStep(2)}
+                      style={{
+                        height: 46, paddingLeft: 24, paddingRight: 24,
+                        borderRadius: 14, background: "linear-gradient(135deg,#0077b6,#00b4d8)",
+                        color: "#fff", fontWeight: 800, fontSize: 14, cursor: "pointer",
+                        fontFamily: "inherit", border: "none",
+                      }}>
+                      Cambiar fecha
+                    </motion.button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 }}>
                     {timeslots.map(slot => {
                       const available = slot.isAvailable && slot.currentBookings < slot.maxBookings;
                       const sel = selectedSlot?.id === slot.id;
@@ -309,13 +400,16 @@ export default function Book() {
                           whileTap={{ scale: available ? 0.93 : 1 }}
                           disabled={!available}
                           onClick={() => { setSelectedSlot(slot); setStep(4); }}
-                          className="h-14 rounded-2xl text-sm font-black"
                           style={{
-                            background: sel ? "#0A1628" : available ? "#ffffff" : "#f5f6f8",
-                            color: sel ? "#00B4D8" : available ? "#0A1628" : "#d1d5db",
-                            boxShadow: sel ? "none" : available ? "0 2px 8px rgba(10,22,40,0.07)" : "none",
-                            border: sel ? "2px solid #00B4D8" : available ? "2px solid transparent" : "none",
+                            height: 56, borderRadius: 16, fontWeight: 900, fontSize: 13,
+                            background: sel
+                              ? "linear-gradient(135deg,#03045e,#0077b6)"
+                              : available ? "#fff" : "#f0f4f8",
+                            color: sel ? "#48cae4" : available ? "#03045e" : "#c0ccd8",
+                            boxShadow: sel ? "0 4px 16px rgba(3,4,94,0.3)" : available ? "0 2px 8px rgba(3,4,94,0.07)" : "none",
+                            border: sel ? "1.5px solid rgba(72,202,228,0.4)" : "none",
                             cursor: available ? "pointer" : "not-allowed",
+                            fontFamily: "inherit",
                           }}
                         >
                           {slot.startTime}
@@ -327,58 +421,150 @@ export default function Book() {
               </div>
             )}
 
-            {/* Step 4: Confirm */}
+            {/* ── STEP 4: Confirmar ── */}
             {step === 4 && (
-              <div className="space-y-4">
-                <div
-                  className="rounded-3xl overflow-hidden"
-                  style={{ background: "#ffffff", boxShadow: "0 2px 12px rgba(10,22,40,0.08)" }}
-                >
-                  {/* Summary header */}
-                  <div
-                    className="px-5 py-4"
-                    style={{ background: "linear-gradient(135deg, #0A1628 0%, #0d2240 100%)" }}
-                  >
-                    <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#00B4D8" }}>Resumen</p>
-                    <p className="font-black text-lg text-white">{selectedService?.name}</p>
-                    <p className="text-white/50 text-sm">{selectedLocation?.name}</p>
-                  </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-                  <div className="px-5 py-4 space-y-3">
+                {/* Auth gate — only here */}
+                {!isAuthenticated && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      borderRadius: 22, overflow: "hidden",
+                      background: "linear-gradient(135deg,#03045e,#0077b6)",
+                      boxShadow: "0 8px 32px rgba(3,4,94,0.3)",
+                      position: "relative",
+                    }}
+                  >
+                    <div style={{
+                      position: "absolute", top: -20, right: -20, width: 80, height: 80,
+                      borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)",
+                      background: "rgba(0,180,216,0.1)", pointerEvents: "none",
+                    }} />
+                    <div style={{ padding: "22px 22px 22px", position: "relative", zIndex: 1 }}>
+                      <div style={{
+                        width: 44, height: 44, borderRadius: 14, marginBottom: 14,
+                        background: "rgba(255,255,255,0.12)",
+                        border: "1px solid rgba(255,255,255,0.2)",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
+                        <BsLockFill style={{ color: "#48cae4", fontSize: 18 }} />
+                      </div>
+                      <p style={{ color: "#fff", fontWeight: 900, fontSize: 18, marginBottom: 4 }}>
+                        Un último paso
+                      </p>
+                      <p style={{ color: "rgba(144,224,239,0.75)", fontSize: 13, marginBottom: 20 }}>
+                        Crea tu cuenta o inicia sesión para confirmar tu reserva. Es gratis y tarda 30 segundos.
+                      </p>
+                      <div style={{ display: "flex", gap: 10 }}>
+                        <motion.button whileTap={{ scale: 0.96 }}
+                          onClick={() => navigate("/register")}
+                          style={{
+                            flex: 1, height: 48, borderRadius: 14,
+                            background: "linear-gradient(135deg,#00b4d8,#0096c7)",
+                            color: "#fff", fontWeight: 900, fontSize: 14,
+                            border: "none", cursor: "pointer", fontFamily: "inherit",
+                            boxShadow: "0 4px 14px rgba(0,180,216,0.35)",
+                          }}>
+                          Crear cuenta
+                        </motion.button>
+                        <motion.button whileTap={{ scale: 0.96 }}
+                          onClick={() => navigate("/login")}
+                          style={{
+                            flex: 1, height: 48, borderRadius: 14,
+                            background: "rgba(255,255,255,0.12)",
+                            border: "1px solid rgba(255,255,255,0.2)",
+                            color: "rgba(255,255,255,0.8)", fontWeight: 700, fontSize: 14,
+                            cursor: "pointer", fontFamily: "inherit",
+                          }}>
+                          Iniciar sesión
+                        </motion.button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Summary card */}
+                <div style={{
+                  borderRadius: 22, overflow: "hidden",
+                  boxShadow: "0 4px 20px rgba(3,4,94,0.12)",
+                }}>
+                  <div style={{
+                    padding: "18px 20px",
+                    background: "linear-gradient(135deg,#03045e,#0077b6,#00b4d8)",
+                    position: "relative",
+                  }}>
+                    <div style={{
+                      position: "absolute", top: -15, right: -15, width: 60, height: 60,
+                      borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)",
+                      background: "rgba(255,255,255,0.06)", pointerEvents: "none",
+                    }} />
+                    <p style={{ color: "rgba(72,202,228,0.8)", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 4 }}>
+                      Resumen de tu reserva
+                    </p>
+                    <p style={{ color: "#fff", fontWeight: 900, fontSize: 20, lineHeight: 1.1 }}>
+                      {selectedService?.name}
+                    </p>
+                    <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, marginTop: 2 }}>
+                      {selectedLocation?.name}
+                    </p>
+                  </div>
+                  <div style={{ background: "#fff", padding: "16px 20px 20px" }}>
                     {[
                       { label: "Precio", value: `$${Number(selectedService?.price).toLocaleString()} MXN` },
                       { label: "Duración", value: `${selectedService?.durationMinutes} minutos` },
                       { label: "Fecha", value: formatDate(selectedDate) },
                       { label: "Horario", value: `${selectedSlot?.startTime} – ${selectedSlot?.endTime}` },
                       { label: "Dirección", value: selectedLocation?.address },
-                    ].map(({ label, value }) => (
-                      <div key={label} className="flex justify-between items-start">
-                        <span className="text-sm font-semibold" style={{ color: "#9ca3af" }}>{label}</span>
-                        <span className="text-sm font-black text-right ml-4" style={{ color: "#0A1628" }}>{value}</span>
+                    ].map(({ label, value }, i, arr) => (
+                      <div key={label} style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+                        padding: "10px 0",
+                        borderBottom: i < arr.length - 1 ? "1px solid #f0f4f8" : "none",
+                      }}>
+                        <span style={{ color: "#90a0b7", fontSize: 13, fontWeight: 600 }}>{label}</span>
+                        <span style={{ color: "#03045e", fontSize: 13, fontWeight: 900, textAlign: "right", maxWidth: "60%" }}>{value}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
+                {/* Notes */}
                 <textarea
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Notas adicionales (opcional)"
-                  className="w-full h-20 p-4 rounded-2xl text-sm font-medium outline-none resize-none"
-                  style={{ background: "#ffffff", color: "#0A1628" }}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="Notas para el lavador (opcional)"
+                  style={{
+                    width: "100%", height: 80, borderRadius: 16, padding: "12px 16px",
+                    background: "#fff", color: "#03045e", fontSize: 13, fontWeight: 500,
+                    border: "none", outline: "none", resize: "none",
+                    boxShadow: "0 2px 10px rgba(3,4,94,0.07)",
+                    fontFamily: "inherit", boxSizing: "border-box",
+                  }}
                 />
 
-                <motion.button
-                  whileTap={{ scale: 0.97 }}
-                  disabled={createBooking.isPending}
-                  onClick={handleConfirm}
-                  className="w-full h-14 rounded-3xl font-black text-white flex items-center justify-center gap-2 disabled:opacity-60"
-                  style={{ background: "linear-gradient(135deg, #00B4D8 0%, #0094b3 100%)", fontSize: 16 }}
-                >
-                  {createBooking.isPending ? "Reservando..." : (
-                    <><BsCheckCircleFill className="text-lg" /> Confirmar reserva</>
-                  )}
-                </motion.button>
+                {/* Confirm button — only if authenticated */}
+                {isAuthenticated && (
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    disabled={createBooking.isPending}
+                    onClick={handleConfirm}
+                    style={{
+                      width: "100%", height: 56, borderRadius: 18,
+                      background: "linear-gradient(135deg,#0077b6,#00b4d8)",
+                      color: "#fff", fontWeight: 900, fontSize: 16,
+                      border: "none", cursor: "pointer", fontFamily: "inherit",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                      boxShadow: "0 8px 28px rgba(0,119,182,0.4)",
+                      opacity: createBooking.isPending ? 0.7 : 1,
+                    }}
+                  >
+                    {createBooking.isPending ? "Confirmando..." : (
+                      <><BsCheckCircleFill style={{ fontSize: 18 }} /> Confirmar reserva</>
+                    )}
+                  </motion.button>
+                )}
               </div>
             )}
           </motion.div>
