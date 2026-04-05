@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { useRegister } from "@workspace/api-client-react";
 import { useAuth } from "@/components/AuthProvider";
 import { motion } from "framer-motion";
@@ -8,6 +8,8 @@ import { BsArrowLeft, BsEnvelopeFill, BsLockFill, BsPersonFill, BsTelephoneFill,
 
 export default function Register() {
   const [, navigate] = useLocation();
+  const search = useSearch();
+  const redirectTo = new URLSearchParams(search).get("redirect") ?? "/";
   const { refetchUser } = useAuth();
   const [form, setForm] = useState({ name: "", email: "", password: "", phone: "" });
 
@@ -16,7 +18,7 @@ export default function Register() {
       onSuccess: async () => {
         await refetchUser();
         toast.success("Cuenta creada");
-        navigate("/");
+        navigate(redirectTo);
       },
       onError: (err: any) => toast.error(err?.message ?? "Error al crear la cuenta"),
     },
@@ -107,7 +109,7 @@ export default function Register() {
           <div className="text-center mt-4">
             <p className="text-sm" style={{ color: "#9ca3af" }}>
               ¿Ya tienes cuenta?{" "}
-              <button onClick={() => navigate("/login")}
+              <button onClick={() => navigate(`/login${redirectTo !== "/" ? `?redirect=${redirectTo}` : ""}`)}
                 className="font-black" style={{ color: "#0A1628" }}>
                 Inicia sesión
               </button>

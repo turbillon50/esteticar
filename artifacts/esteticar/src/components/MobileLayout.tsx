@@ -9,6 +9,7 @@ import {
   BsClockFill, BsClock,
   BsListUl,
   BsGridFill, BsGrid,
+  BsGeoAltFill, BsGeoAlt,
 } from "react-icons/bs";
 import { HiOutlineWrenchScrewdriver, HiWrenchScrewdriver } from "react-icons/hi2";
 
@@ -22,6 +23,7 @@ type NavLink = {
 function getNavLinks(role?: string): NavLink[] {
   if (role === "customer") return [
     { href: "/", label: "Inicio", ActiveIcon: BsHouseDoorFill, Icon: BsHouseDoor },
+    { href: "/locations", label: "Sucursales", ActiveIcon: BsGeoAltFill, Icon: BsGeoAlt },
     { href: "/bookings", label: "Mis citas", ActiveIcon: BsCalendarCheckFill, Icon: BsCalendarCheck },
     { href: "/profile", label: "Perfil", ActiveIcon: BsPersonFill, Icon: BsPerson },
   ];
@@ -38,6 +40,7 @@ function getNavLinks(role?: string): NavLink[] {
   ];
   return [
     { href: "/", label: "Inicio", ActiveIcon: BsHouseDoorFill, Icon: BsHouseDoor },
+    { href: "/locations", label: "Sucursales", ActiveIcon: BsGeoAltFill, Icon: BsGeoAlt },
     { href: "/services", label: "Servicios", ActiveIcon: BsListUl, Icon: BsListUl },
     { href: "/login", label: "Entrar", ActiveIcon: BsPersonFill, Icon: BsPerson },
   ];

@@ -459,7 +459,7 @@ export default function Book() {
                       </p>
                       <div style={{ display: "flex", gap: 10 }}>
                         <motion.button whileTap={{ scale: 0.96 }}
-                          onClick={() => navigate("/register")}
+                          onClick={() => navigate("/register?redirect=/book")}
                           style={{
                             flex: 1, height: 48, borderRadius: 14,
                             background: "linear-gradient(135deg,#00b4d8,#0096c7)",
@@ -470,7 +470,7 @@ export default function Book() {
                           Crear cuenta
                         </motion.button>
                         <motion.button whileTap={{ scale: 0.96 }}
-                          onClick={() => navigate("/login")}
+                          onClick={() => navigate("/login?redirect=/book")}
                           style={{
                             flex: 1, height: 48, borderRadius: 14,
                             background: "rgba(255,255,255,0.12)",

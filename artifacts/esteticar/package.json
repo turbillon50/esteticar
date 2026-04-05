@@ -74,5 +74,10 @@
     "vite-plugin-pwa": "^1.2.0",
     "wouter": "^3.3.5",
     "zod": "catalog:"
+  },
+  "dependencies": {
+    "@types/leaflet": "^1.9.21",
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0"
   }
 }

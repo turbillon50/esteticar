@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { useLogin } from "@workspace/api-client-react";
 import { useAuth } from "@/components/AuthProvider";
 import { motion } from "framer-motion";
@@ -10,6 +10,8 @@ const BG = "linear-gradient(160deg, #020b1a 0%, #03045e 30%, #0077b6 70%, #00b4d
 
 export default function Login() {
   const [, navigate] = useLocation();
+  const search = useSearch();
+  const redirectTo = new URLSearchParams(search).get("redirect") ?? "/";
   const { refetchUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +21,7 @@ export default function Login() {
       onSuccess: async () => {
         await refetchUser();
         toast.success("Bienvenido de vuelta");
-        navigate("/");
+        navigate(redirectTo);
       },
       onError: () => toast.error("Correo o contraseña incorrectos"),
     },
@@ -139,24 +141,34 @@ export default function Login() {
 
           <p style={{ textAlign: "center", marginTop: 16, fontSize: 14, color: "#90a0b7" }}>
             ¿No tienes cuenta?{" "}
-            <button onClick={() => navigate("/register")}
+            <button onClick={() => navigate(`/register${redirectTo !== "/" ? `?redirect=${redirectTo}` : ""}`)}
               style={{ color: "#0077b6", fontWeight: 800, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
               Regístrate
             </button>
           </p>
         </div>
 
-        {/* Demo hint */}
-        <div style={{
-          marginTop: 14, borderRadius: 18, padding: "14px 18px",
-          background: "rgba(72,202,228,0.12)",
-          border: "1px solid rgba(72,202,228,0.25)",
-        }}>
-          <p style={{ color: "#48cae4", fontSize: 11, fontWeight: 800, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Demo
-          </p>
-          <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontFamily: "monospace" }}>Admin: admin@esteticar.mx / admin123</p>
-          <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontFamily: "monospace" }}>Proveedor: juan@esteticar.mx / washer123</p>
+        {/* Quick demo access */}
+        <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
+          <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 11, textAlign: "center", fontWeight: 600 }}>Acceso rápido</p>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[
+              { label: "Entrar como Admin", email: "admin@esteticar.mx", pass: "admin123" },
+              { label: "Entrar como Cliente", email: "juan@esteticar.mx", pass: "washer123" },
+            ].map(({ label, email, pass }) => (
+              <motion.button key={label} whileTap={{ scale: 0.96 }}
+                onClick={() => { setEmail(email); setPassword(pass); setTimeout(() => login.mutate({ data: { email, password: pass } }), 100); }}
+                style={{
+                  flex: 1, height: 40, borderRadius: 12,
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  color: "rgba(255,255,255,0.65)", fontWeight: 700, fontSize: 11,
+                  cursor: "pointer", fontFamily: "inherit",
+                }}>
+                {label}
+              </motion.button>
+            ))}
+          </div>
         </div>
       </motion.div>
     </div>
