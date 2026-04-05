@@ -246,8 +246,8 @@ function Hero({ isAuthenticated, navigate, name }: any) {
 /* ─── STATS STRIP ─────────────────────────────────────────── */
 function StatsStrip() {
   const stats = [
-    { icon: <BsDropletFill />, val: "3,200+", label: "Lavados" },
-    { icon: <BsStarFill />, val: "4.9", label: "Calificación" },
+    { icon: <BsGeoAlt />, val: "9", label: "Autolavados" },
+    { icon: <BsDropletFill />, val: "6", label: "Ciudades" },
     { icon: <BsShieldFill />, val: "100%", label: "Garantía" },
   ];
   return (
@@ -394,10 +394,9 @@ function LocationCard({ location, img, onClick, index }: any) {
           <span style={{ color: "#0077b6", fontSize: 10, fontWeight: 700 }}>Ver en mapa</span>
         </div>
       </div>
-      {/* Rating */}
-      <div style={{ padding: "0 16px 0 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-        <BsStarFill style={{ color: "#fbbf24", fontSize: 14 }} />
-        <span style={{ color: "#03045e", fontWeight: 900, fontSize: 14 }}>4.9</span>
+      {/* Arrow */}
+      <div style={{ padding: "0 16px 0 0" }}>
+        <BsArrowRight style={{ color: "#0077b6", fontSize: 14 }} />
       </div>
     </motion.button>
   );
