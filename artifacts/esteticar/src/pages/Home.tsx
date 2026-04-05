@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useLocation } from "wouter";
 import {
   useListServices,
@@ -7,92 +8,324 @@ import {
 } from "@workspace/api-client-react";
 import { useAuth } from "@/components/AuthProvider";
 import { motion } from "framer-motion";
-import {
-  BsArrowRight,
-  BsGeoAlt,
-  BsClock,
-  BsCheckCircleFill,
-  BsCalendar3,
-  BsStarFill,
-  BsBell,
-} from "react-icons/bs";
+import { BsArrowRight, BsStarFill, BsClock, BsGeoAlt, BsCalendar3, BsBell } from "react-icons/bs";
 
-/* ─── tiny helpers ─────────────────────────────────── */
-function badge(text: string, color = "bg-secondary/20 text-secondary") {
-  return (
-    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${color}`}>
-      {text}
-    </span>
-  );
-}
+/* ── Cinematic gradients — water / foam / splash ───────────── */
+const SERVICE_GRADIENTS = [
+  "linear-gradient(145deg, #03045e 0%, #0077b6 45%, #00b4d8 80%, #90e0ef 100%)",
+  "linear-gradient(145deg, #005f73 0%, #0a9396 50%, #94d2bd 90%, #e9f5db 100%)",
+  "linear-gradient(145deg, #1a1a2e 0%, #16213e 30%, #0f3460 65%, #00b4d8 100%)",
+  "linear-gradient(145deg, #023e8a 0%, #0096c7 55%, #48cae4 85%, #ade8f4 100%)",
+];
 
-/* ─── SERVICE CHIP (horizontal scroll) ─────────────── */
-function ServiceChip({ service, onClick }: { service: any; onClick: () => void }) {
+const HERO_GRADIENT =
+  "linear-gradient(160deg, #03045e 0%, #023e8a 25%, #0077b6 55%, #00b4d8 80%, #48cae4 100%)";
+
+const FEATURED_GRADIENT =
+  "linear-gradient(135deg, #0a1628 0%, #005f73 40%, #0096c7 70%, #48cae4 100%)";
+
+/* ── HERO CARD ─────────────────────────────────────────────── */
+function HeroCard({ isAuthenticated, navigate, name }: any) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.95 }}
-      onClick={onClick}
-      className="flex-shrink-0 flex flex-col rounded-3xl overflow-hidden bg-white shadow-sm"
-      style={{ width: 160, boxShadow: "0 2px 16px rgba(10,22,40,0.08)" }}
+    <div
+      className="relative overflow-hidden flex flex-col justify-between"
+      style={{
+        background: HERO_GRADIENT,
+        borderRadius: 28,
+        minHeight: 320,
+        padding: "28px 24px 24px",
+      }}
     >
-      <div
-        className="flex items-center justify-center relative overflow-hidden"
-        style={{ height: 108, background: "linear-gradient(135deg, #e8f4f8 0%, #d1ecf5 100%)" }}
-      >
-        {service.imageUrl ? (
-          <img src={service.imageUrl} alt={service.name} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-5xl" style={{ color: "#00B4D8", opacity: 0.35, fontWeight: 900 }}>✦</span>
+      {/* Foam / bubble overlays */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: "radial-gradient(ellipse 60% 40% at 85% 15%, rgba(144,224,239,0.25) 0%, transparent 60%)",
+      }} />
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: "radial-gradient(ellipse 40% 50% at 10% 80%, rgba(0,180,216,0.20) 0%, transparent 55%)",
+      }} />
+      {/* Bubbles */}
+      {[
+        { size: 80, top: -20, right: -20, op: 0.12 },
+        { size: 50, top: 60, right: 30, op: 0.10 },
+        { size: 120, bottom: -30, right: 40, op: 0.08 },
+        { size: 35, top: 120, left: 20, op: 0.15 },
+      ].map((b, i) => (
+        <div key={i} style={{
+          position: "absolute",
+          width: b.size, height: b.size,
+          borderRadius: "50%",
+          border: "1.5px solid rgba(255,255,255,0.3)",
+          background: `rgba(255,255,255,${b.op})`,
+          top: b.top, bottom: (b as any).bottom,
+          right: (b as any).right, left: (b as any).left,
+          pointerEvents: "none",
+          backdropFilter: "blur(2px)",
+        }} />
+      ))}
+
+      {/* Top row */}
+      <div className="flex items-start justify-between relative z-10">
+        <div>
+          {isAuthenticated ? (
+            <>
+              <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                {new Date().getHours() < 12 ? "Buenos días" : new Date().getHours() < 19 ? "Buenas tardes" : "Buenas noches"} 👋
+              </p>
+              <p style={{ color: "#fff", fontSize: 26, fontWeight: 900, lineHeight: 1.1 }}>
+                {name?.split(" ")[0]}
+              </p>
+            </>
+          ) : (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                <div style={{
+                  width: 30, height: 30, borderRadius: "50%",
+                  background: "linear-gradient(135deg, #48cae4, #0096c7)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 13, fontWeight: 900, color: "#fff",
+                }}>E</div>
+                <span style={{ color: "rgba(255,255,255,0.9)", fontWeight: 800, letterSpacing: "0.12em", fontSize: 12 }}>ESTETICAR</span>
+              </div>
+              <p style={{ color: "#fff", fontSize: 30, fontWeight: 900, lineHeight: 1.1, marginBottom: 8 }}>
+                Tu auto merece<br />lo mejor.
+              </p>
+              <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 14, fontWeight: 500 }}>
+                Sin filas. Sin esperas. Solo reserva.
+              </p>
+            </>
+          )}
+        </div>
+        {isAuthenticated && (
+          <button style={{
+            width: 40, height: 40, borderRadius: "50%",
+            background: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            backdropFilter: "blur(8px)",
+          }}>
+            <BsBell style={{ color: "#fff", fontSize: 16 }} />
+          </button>
         )}
-        <div
-          className="absolute top-2 right-2 font-bold text-xs px-2 py-1 rounded-full"
-          style={{ background: "rgba(255,255,255,0.9)", color: "#0A1628" }}
-        >
-          ${Number(service.price).toLocaleString()}
-        </div>
       </div>
-      <div className="px-3 py-2.5">
-        <p className="font-bold text-xs leading-tight" style={{ color: "#0A1628" }}>{service.name}</p>
-        <div className="flex items-center gap-1 mt-1">
-          <BsClock className="text-[10px]" style={{ color: "#9ca3af" }} />
-          <span className="text-[10px] font-medium" style={{ color: "#9ca3af" }}>{service.durationMinutes} min</span>
+
+      {/* CTA Button */}
+      <motion.button
+        whileTap={{ scale: 0.96 }}
+        onClick={() => navigate(isAuthenticated ? "/book" : "/login")}
+        className="relative z-10"
+        style={{
+          width: "100%",
+          height: 52,
+          borderRadius: 16,
+          background: "rgba(255,255,255,0.15)",
+          border: "1.5px solid rgba(255,255,255,0.35)",
+          backdropFilter: "blur(12px)",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "0 18px",
+          marginTop: 24,
+        }}
+      >
+        <div style={{ textAlign: "left" }}>
+          <p style={{ color: "#fff", fontWeight: 900, fontSize: 15 }}>Agendar lavado</p>
+          <p style={{ color: "rgba(144,224,239,0.75)", fontSize: 11, fontWeight: 500, marginTop: 1 }}>
+            Servicio · sucursal · horario
+          </p>
         </div>
-      </div>
-    </motion.button>
+        <div style={{
+          width: 34, height: 34, borderRadius: "50%",
+          background: "linear-gradient(135deg, #00b4d8, #0077b6)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <BsArrowRight style={{ color: "#fff", fontSize: 14 }} />
+        </div>
+      </motion.button>
+    </div>
   );
 }
 
-/* ─── LOCATION ROW ──────────────────────────────────── */
-function LocationRow({ location, onClick }: { location: any; onClick: () => void }) {
+/* ── APPLE-STYLE FEATURED CARD ─────────────────────────────── */
+function FeaturedCard({ service, gradient, onClick }: any) {
   return (
     <motion.button
-      whileTap={{ scale: 0.98 }}
+      whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className="flex items-center gap-3 p-3.5 rounded-2xl bg-white w-full text-left"
-      style={{ boxShadow: "0 2px 12px rgba(10,22,40,0.07)" }}
+      className="flex-shrink-0"
+      style={{
+        width: "85vw",
+        maxWidth: 360,
+        borderRadius: 24,
+        overflow: "hidden",
+        background: gradient,
+        position: "relative",
+        boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
+        scrollSnapAlign: "center",
+      }}
     >
-      <div
-        className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-        style={{ background: "linear-gradient(135deg, #00B4D8, #0094b3)" }}
-      >
-        <BsGeoAlt className="text-white text-sm" />
+      {/* Foam shimmer */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: "radial-gradient(ellipse 70% 50% at 80% 20%, rgba(255,255,255,0.18) 0%, transparent 60%)",
+      }} />
+      {/* Bubbles */}
+      {[
+        { w: 90, h: 90, top: -15, right: -15, op: 0.12 },
+        { w: 55, h: 55, top: 50, right: 20, op: 0.09 },
+        { w: 40, h: 40, bottom: 60, left: 15, op: 0.10 },
+      ].map((b, i) => (
+        <div key={i} style={{
+          position: "absolute",
+          width: b.w, height: b.h, borderRadius: "50%",
+          border: "1px solid rgba(255,255,255,0.25)",
+          background: `rgba(255,255,255,${b.op})`,
+          top: (b as any).top, bottom: (b as any).bottom,
+          right: (b as any).right, left: (b as any).left,
+        }} />
+      ))}
+
+      {/* Image */}
+      <div style={{ height: 180, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+        {service.imageUrl ? (
+          <img src={service.imageUrl} alt={service.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <div style={{ fontSize: 72, fontWeight: 900, color: "rgba(255,255,255,0.15)", letterSpacing: -4 }}>
+            ✦✦
+          </div>
+        )}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-bold text-sm truncate" style={{ color: "#0A1628" }}>{location.name}</p>
-        <p className="text-xs truncate" style={{ color: "#9ca3af" }}>{location.address}</p>
-      </div>
-      <div className="flex items-center gap-0.5">
-        <BsStarFill className="text-yellow-400 text-xs" />
-        <span className="text-xs font-semibold" style={{ color: "#0A1628" }}>4.9</span>
+
+      {/* Info */}
+      <div style={{ padding: "16px 20px 20px", position: "relative", zIndex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+          <span style={{
+            fontSize: 10, fontWeight: 800, color: "rgba(144,224,239,0.9)",
+            textTransform: "uppercase", letterSpacing: "0.12em",
+          }}>
+            Servicio destacado
+          </span>
+        </div>
+        <p style={{ color: "#fff", fontSize: 22, fontWeight: 900, lineHeight: 1.1, marginBottom: 8 }}>
+          {service.name}
+        </p>
+        <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 13, lineHeight: 1.4, marginBottom: 14 }}>
+          {service.description?.slice(0, 70)}…
+        </p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <BsClock style={{ color: "rgba(144,224,239,0.7)", fontSize: 11 }} />
+            <span style={{ color: "rgba(144,224,239,0.8)", fontSize: 12, fontWeight: 600 }}>
+              {service.durationMinutes} min
+            </span>
+          </div>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8,
+            background: "rgba(255,255,255,0.15)",
+            border: "1px solid rgba(255,255,255,0.25)",
+            borderRadius: 20, padding: "5px 14px",
+            backdropFilter: "blur(8px)",
+          }}>
+            <span style={{ color: "#fff", fontSize: 16, fontWeight: 900 }}>
+              ${Number(service.price).toLocaleString()}
+            </span>
+            <BsArrowRight style={{ color: "rgba(144,224,239,0.9)", fontSize: 12 }} />
+          </div>
+        </div>
       </div>
     </motion.button>
   );
 }
 
-/* ─── MAIN ──────────────────────────────────────────── */
+/* ── LOCATION ROW ───────────────────────────────────────────── */
+function LocationRow({ location, onClick }: any) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: 14,
+        padding: "14px 16px",
+        background: "#fff",
+        borderRadius: 18,
+        width: "100%",
+        textAlign: "left",
+        boxShadow: "0 2px 12px rgba(3,4,94,0.08)",
+      }}
+    >
+      <div style={{
+        width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+        background: "linear-gradient(135deg, #0077b6, #00b4d8)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+      }}>
+        <BsGeoAlt style={{ color: "#fff", fontSize: 18 }} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ color: "#03045e", fontWeight: 800, fontSize: 14, marginBottom: 2 }}>{location.name}</p>
+        <p style={{ color: "#90a0b0", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {location.address}
+        </p>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
+        <BsStarFill style={{ color: "#fbbf24", fontSize: 11 }} />
+        <span style={{ color: "#03045e", fontSize: 13, fontWeight: 700 }}>4.9</span>
+      </div>
+    </motion.button>
+  );
+}
+
+/* ── MINI SERVICE CHIP ─────────────────────────────────────── */
+function ServiceChip({ service, gradient, onClick }: any) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.93 }}
+      onClick={onClick}
+      style={{
+        flexShrink: 0, width: 130,
+        borderRadius: 20, overflow: "hidden",
+        background: gradient,
+        boxShadow: "0 4px 16px rgba(3,4,94,0.15)",
+        position: "relative",
+      }}
+    >
+      {/* shimmer */}
+      <div style={{
+        position: "absolute", inset: 0, pointerEvents: "none",
+        background: "radial-gradient(ellipse 80% 50% at 70% 0%, rgba(255,255,255,0.18) 0%, transparent 60%)",
+      }} />
+      <div style={{ height: 90, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+        {service.imageUrl
+          ? <img src={service.imageUrl} alt={service.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          : <span style={{ fontSize: 34, fontWeight: 900, color: "rgba(255,255,255,0.18)" }}>✦</span>
+        }
+        <div style={{
+          position: "absolute", top: 8, right: 8,
+          background: "rgba(255,255,255,0.18)", backdropFilter: "blur(6px)",
+          borderRadius: 10, padding: "3px 8px",
+          border: "1px solid rgba(255,255,255,0.25)",
+        }}>
+          <span style={{ color: "#fff", fontSize: 11, fontWeight: 800 }}>
+            ${Number(service.price).toLocaleString()}
+          </span>
+        </div>
+      </div>
+      <div style={{ padding: "10px 12px 12px" }}>
+        <p style={{ color: "#fff", fontWeight: 800, fontSize: 12, lineHeight: 1.2, marginBottom: 4 }}>{service.name}</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <BsClock style={{ color: "rgba(144,224,239,0.8)", fontSize: 9 }} />
+          <span style={{ color: "rgba(144,224,239,0.8)", fontSize: 10, fontWeight: 600 }}>{service.durationMinutes} min</span>
+        </div>
+      </div>
+    </motion.button>
+  );
+}
+
+/* ── PAGE ───────────────────────────────────────────────────── */
 export default function Home() {
   const [, navigate] = useLocation();
   const { user, isAuthenticated } = useAuth();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   const { data: services } = useListServices();
   const { data: locations } = useListLocations();
   const { data: dashboard } = useGetDashboardSummary({
@@ -102,233 +335,201 @@ export default function Home() {
     },
   });
 
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Buenos días" : hour < 19 ? "Buenas tardes" : "Buenas noches";
   const next = dashboard?.nextBooking;
 
   return (
-    <div className="min-h-screen" style={{ background: "#f5f6f8" }}>
+    <div style={{ minHeight: "100%", background: "#f0f4f8" }}>
 
-      {/* ── TOP DARK HEADER ── */}
-      <div
-        className="relative overflow-hidden px-5 pt-14 pb-28"
-        style={{
-          background: "linear-gradient(150deg, #0A1628 0%, #0d2240 60%, #0f2d54 100%)",
-        }}
-      >
-        {/* decorative circles */}
-        <div className="absolute top-0 right-0 w-56 h-56 rounded-full opacity-10"
-          style={{ background: "radial-gradient(circle, #00B4D8 0%, transparent 70%)", transform: "translate(30%, -30%)" }} />
-        <div className="absolute bottom-0 left-0 w-40 h-40 rounded-full opacity-10"
-          style={{ background: "radial-gradient(circle, #00B4D8 0%, transparent 70%)", transform: "translate(-30%, 40%)" }} />
-
-        {/* top row */}
-        <div className="flex items-start justify-between mb-6 relative z-10">
-          <div>
-            {isAuthenticated ? (
-              <>
-                <p className="text-white/50 text-sm font-medium mb-0.5">{greeting} 👋</p>
-                <h1 className="text-2xl font-extrabold text-white leading-tight">
-                  {user?.name?.split(" ")[0]}
-                </h1>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center"
-                    style={{ background: "linear-gradient(135deg, #00B4D8, #0094b3)" }}>
-                    <span className="text-white font-black text-xs">E</span>
-                  </div>
-                  <span className="text-white font-bold tracking-widest text-xs uppercase">Esteticar</span>
-                </div>
-                <h1 className="text-3xl font-extrabold text-white leading-tight">
-                  Tu auto<br />merece lo mejor.
-                </h1>
-              </>
-            )}
-          </div>
-          {isAuthenticated && (
-            <button className="w-10 h-10 rounded-full flex items-center justify-center relative"
-              style={{ background: "rgba(255,255,255,0.08)" }}>
-              <BsBell className="text-white text-lg" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-                style={{ background: "#00B4D8", boxShadow: "0 0 0 2px #0A1628" }} />
-            </button>
-          )}
-        </div>
-
-        {/* Stats chips for customers */}
-        {isAuthenticated && user?.role === "customer" && dashboard && (
-          <div className="flex gap-3 relative z-10 mb-0">
-            <div className="flex-1 rounded-2xl px-4 py-3"
-              style={{ background: "rgba(255,255,255,0.08)" }}>
-              <p className="text-2xl font-black text-white">{dashboard.upcomingCount}</p>
-              <p className="text-white/50 text-[11px] font-medium mt-0.5">Próximas</p>
-            </div>
-            <div className="flex-1 rounded-2xl px-4 py-3"
-              style={{ background: "rgba(255,255,255,0.08)" }}>
-              <p className="text-2xl font-black text-white">{dashboard.completedCount}</p>
-              <p className="text-white/50 text-[11px] font-medium mt-0.5">Completadas</p>
-            </div>
-            <div className="flex-1 rounded-2xl px-4 py-3"
-              style={{ background: "rgba(0,180,216,0.2)", border: "1px solid rgba(0,180,216,0.3)" }}>
-              <p className="text-2xl font-black" style={{ color: "#00B4D8" }}>★</p>
-              <p className="text-white/50 text-[11px] font-medium mt-0.5">Top cliente</p>
-            </div>
-          </div>
-        )}
-
-        {/* Public tagline */}
-        {!isAuthenticated && (
-          <p className="text-white/50 text-sm relative z-10">Sin filas. Sin esperas. Solo reserva.</p>
-        )}
+      {/* ── HERO ── */}
+      <div style={{ padding: "52px 16px 0" }}>
+        <HeroCard isAuthenticated={isAuthenticated} navigate={navigate} name={user?.name} />
       </div>
 
-      {/* ── FLOATING ACTION CARD (negative margin to overlay) ── */}
-      <div className="px-4 -mt-16 relative z-20 mb-4">
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => isAuthenticated ? navigate("/book") : navigate("/login")}
-          className="w-full flex items-center gap-4 rounded-3xl px-5 py-4"
-          style={{
-            background: "#ffffff",
-            boxShadow: "0 8px 40px rgba(10,22,40,0.18)",
-          }}
-        >
-          <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "linear-gradient(135deg, #00B4D8 0%, #0094b3 100%)" }}
-          >
-            <BsCalendar3 className="text-white text-xl" />
-          </div>
-          <div className="flex-1 text-left">
-            <p className="font-black text-base" style={{ color: "#0A1628" }}>Agendar lavado</p>
-            <p className="text-xs font-medium mt-0.5" style={{ color: "#9ca3af" }}>
-              Elige servicio · sucursal · horario
-            </p>
-          </div>
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ background: "#0A1628" }}
-          >
-            <BsArrowRight className="text-white text-sm" />
-          </div>
-        </motion.button>
-      </div>
-
-      {/* ── NEXT BOOKING CARD ── */}
+      {/* ── UPCOMING BOOKING (customer) ── */}
       {isAuthenticated && user?.role === "customer" && next && (
-        <div className="px-4 mb-5">
+        <div style={{ padding: "16px 16px 0" }}>
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-3xl p-4 relative overflow-hidden"
             style={{
-              background: "linear-gradient(135deg, #0A1628 0%, #0d2240 100%)",
-              boxShadow: "0 4px 20px rgba(10,22,40,0.15)",
+              background: "linear-gradient(135deg, #03045e 0%, #0077b6 60%, #00b4d8 100%)",
+              borderRadius: 20, padding: "16px 18px",
+              position: "relative", overflow: "hidden",
+              boxShadow: "0 8px 30px rgba(3,4,94,0.25)",
             }}
           >
-            <div className="absolute top-0 right-0 w-28 h-28 rounded-full opacity-10"
-              style={{ background: "radial-gradient(circle, #00B4D8, transparent 70%)", transform: "translate(20%, -20%)" }} />
-            <div className="flex items-start justify-between relative z-10">
+            <div style={{
+              position: "absolute", top: -20, right: -20, width: 80, height: 80,
+              borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)",
+              background: "rgba(255,255,255,0.06)",
+            }} />
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <BsCheckCircleFill className="text-xs" style={{ color: "#00B4D8" }} />
-                  <span className="text-xs font-bold uppercase tracking-widest" style={{ color: "#00B4D8" }}>
-                    Próxima cita
-                  </span>
-                </div>
-                <p className="font-extrabold text-white text-base">{next.service?.name}</p>
-                <p className="text-white/50 text-sm mt-0.5">{next.location?.name}</p>
-                <p className="text-white/80 text-sm font-semibold mt-2">
-                  {new Date(next.date + "T00:00:00").toLocaleDateString("es-MX", {
-                    weekday: "short", month: "short", day: "numeric",
-                  })} · {next.startTime}
+                <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 4 }}>
+                  Próxima cita
+                </p>
+                <p style={{ color: "#fff", fontWeight: 900, fontSize: 16, marginBottom: 2 }}>{next.service?.name}</p>
+                <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12 }}>{next.location?.name}</p>
+                <p style={{ color: "rgba(144,224,239,0.9)", fontSize: 13, fontWeight: 700, marginTop: 6 }}>
+                  {new Date(next.date + "T00:00:00").toLocaleDateString("es-MX", { weekday: "short", month: "short", day: "numeric" })} · {next.startTime}
                 </p>
               </div>
               <button
                 onClick={() => navigate("/bookings")}
-                className="flex-shrink-0 h-9 px-3 rounded-xl text-xs font-bold"
-                style={{ background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.8)" }}
-              >
-                Ver
-              </button>
+                style={{
+                  background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)",
+                  borderRadius: 12, padding: "6px 14px",
+                  color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: 700,
+                }}
+              >Ver</button>
             </div>
           </motion.div>
         </div>
       )}
 
-      {/* ── SERVICES ── */}
-      <section className="mb-6">
-        <div className="flex items-center justify-between px-5 mb-3">
-          <h2 className="text-base font-extrabold" style={{ color: "#0A1628" }}>Servicios</h2>
+      {/* ── STATS (customer) ── */}
+      {isAuthenticated && user?.role === "customer" && dashboard && (
+        <div style={{ padding: "14px 16px 0", display: "flex", gap: 10 }}>
+          {[
+            { val: dashboard.upcomingCount, label: "Próximas", grad: "linear-gradient(135deg,#023e8a,#0096c7)" },
+            { val: dashboard.completedCount, label: "Completadas", grad: "linear-gradient(135deg,#005f73,#0a9396)" },
+          ].map(({ val, label, grad }) => (
+            <div key={label} style={{
+              flex: 1, borderRadius: 18, padding: "14px 16px",
+              background: grad, position: "relative", overflow: "hidden",
+              boxShadow: "0 4px 16px rgba(3,4,94,0.18)",
+            }}>
+              <div style={{
+                position: "absolute", top: -12, right: -12, width: 50, height: 50,
+                borderRadius: "50%", background: "rgba(255,255,255,0.08)",
+              }} />
+              <p style={{ color: "#fff", fontSize: 28, fontWeight: 900 }}>{val}</p>
+              <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 11, fontWeight: 600 }}>{label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── FEATURED CARDS (Apple-style) ── */}
+      <div style={{ paddingTop: 28 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px 14px" }}>
+          <div>
+            <p style={{ color: "#90a0b7", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              Destacados
+            </p>
+            <p style={{ color: "#03045e", fontSize: 20, fontWeight: 900, lineHeight: 1.1 }}>Nuestros servicios</p>
+          </div>
           <button onClick={() => navigate("/services")}
-            className="text-xs font-bold flex items-center gap-1"
-            style={{ color: "#00B4D8" }}>
-            Ver todos <BsArrowRight className="text-[10px]" />
+            style={{ color: "#0077b6", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
+            Ver todos <BsArrowRight style={{ fontSize: 11 }} />
           </button>
         </div>
-        <div className="flex gap-3 overflow-x-auto pb-2 px-5"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          {!services ? (
-            [1, 2, 3].map(i => (
-              <div key={i} className="flex-shrink-0 rounded-3xl bg-white animate-pulse"
-                style={{ width: 160, height: 148 }} />
+
+        {/* Horizontal snap scroll */}
+        <div
+          ref={scrollRef}
+          style={{
+            display: "flex", gap: 14,
+            overflowX: "auto", scrollSnapType: "x mandatory",
+            padding: "4px 20px 16px", scrollBehavior: "smooth",
+          }}
+        >
+          {!services
+            ? [1, 2].map(i => (
+              <div key={i} style={{
+                flexShrink: 0, width: "85vw", maxWidth: 360, height: 300,
+                borderRadius: 24, background: "linear-gradient(135deg, #023e8a, #0096c7)",
+                opacity: 0.3, scrollSnapAlign: "center",
+              }} />
             ))
-          ) : (
-            services.map(s => (
-              <ServiceChip key={s.id} service={s} onClick={() => navigate("/book")} />
+            : services.map((s, i) => (
+              <FeaturedCard
+                key={s.id}
+                service={s}
+                gradient={SERVICE_GRADIENTS[i % SERVICE_GRADIENTS.length]}
+                onClick={() => navigate("/book")}
+              />
             ))
-          )}
+          }
         </div>
-      </section>
+      </div>
+
+      {/* ── MINI SERVICES CHIP ROW ── */}
+      {services && services.length > 0 && (
+        <div style={{ paddingBottom: 4 }}>
+          <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 20px 4px" }}>
+            {services.map((s, i) => (
+              <ServiceChip
+                key={s.id}
+                service={s}
+                gradient={SERVICE_GRADIENTS[(i + 1) % SERVICE_GRADIENTS.length]}
+                onClick={() => navigate("/book")}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── LOCATIONS ── */}
-      <section className="px-4 mb-6">
-        <div className="flex items-center justify-between mb-3 px-1">
-          <h2 className="text-base font-extrabold" style={{ color: "#0A1628" }}>Sucursales</h2>
+      <div style={{ padding: "24px 16px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div>
+            <p style={{ color: "#90a0b7", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              Dónde estamos
+            </p>
+            <p style={{ color: "#03045e", fontSize: 20, fontWeight: 900 }}>Sucursales</p>
+          </div>
           <button onClick={() => navigate("/locations")}
-            className="text-xs font-bold flex items-center gap-1"
-            style={{ color: "#00B4D8" }}>
-            Ver mapa <BsArrowRight className="text-[10px]" />
+            style={{ color: "#0077b6", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
+            Ver mapa <BsArrowRight style={{ fontSize: 11 }} />
           </button>
         </div>
-        <div className="space-y-2.5">
-          {!locations ? (
-            [1, 2].map(i => <div key={i} className="h-16 rounded-2xl bg-white animate-pulse" />)
-          ) : (
-            locations.slice(0, 3).map(l => (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {!locations
+            ? [1, 2].map(i => <div key={i} style={{ height: 68, borderRadius: 18, background: "#e0e8f0" }} />)
+            : locations.map(l => (
               <LocationRow key={l.id} location={l} onClick={() => navigate("/book")} />
             ))
-          )}
+          }
         </div>
-      </section>
+      </div>
 
-      {/* ── PUBLIC CTA ── */}
+      {/* ── PUBLIC BOTTOM CTA ── */}
       {!isAuthenticated && (
-        <div className="px-4 pb-8">
-          <div className="rounded-3xl p-5 text-center"
-            style={{
-              background: "linear-gradient(135deg, #0A1628 0%, #0d2240 100%)",
-              boxShadow: "0 4px 24px rgba(10,22,40,0.15)",
-            }}>
-            <p className="font-extrabold text-white text-base mb-1">Reserva en 2 minutos</p>
-            <p className="text-white/50 text-sm mb-4">Sin registrarte no puedes agendar.</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => navigate("/register")}
-                className="flex-1 h-12 rounded-2xl font-bold text-sm"
-                style={{ background: "linear-gradient(135deg, #00B4D8, #0094b3)", color: "#fff" }}
-              >
-                Crear cuenta
-              </button>
-              <button
-                onClick={() => navigate("/login")}
-                className="flex-1 h-12 rounded-2xl font-bold text-sm"
-                style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.8)" }}
-              >
-                Iniciar sesión
-              </button>
+        <div style={{ padding: "24px 16px 28px" }}>
+          <div style={{
+            borderRadius: 24, overflow: "hidden",
+            background: "linear-gradient(145deg, #03045e 0%, #0077b6 50%, #00b4d8 100%)",
+            padding: "22px 22px 22px",
+            position: "relative",
+            boxShadow: "0 8px 32px rgba(3,4,94,0.25)",
+          }}>
+            {/* foam */}
+            <div style={{
+              position: "absolute", top: -30, right: -30, width: 120, height: 120,
+              borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)",
+              background: "rgba(255,255,255,0.06)", pointerEvents: "none",
+            }} />
+            <p style={{ color: "#fff", fontSize: 20, fontWeight: 900, marginBottom: 4 }}>
+              Reserva en 2 minutos
+            </p>
+            <p style={{ color: "rgba(144,224,239,0.75)", fontSize: 13, marginBottom: 18 }}>
+              Crea tu cuenta y agenda tu primer lavado gratis.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <motion.button whileTap={{ scale: 0.96 }} onClick={() => navigate("/register")} style={{
+                flex: 1, height: 48, borderRadius: 14,
+                background: "rgba(255,255,255,0.18)",
+                border: "1.5px solid rgba(255,255,255,0.35)",
+                color: "#fff", fontWeight: 800, fontSize: 14,
+                backdropFilter: "blur(8px)",
+              }}>Crear cuenta</motion.button>
+              <motion.button whileTap={{ scale: 0.96 }} onClick={() => navigate("/login")} style={{
+                flex: 1, height: 48, borderRadius: 14,
+                background: "rgba(0,0,0,0.25)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                color: "rgba(255,255,255,0.7)", fontWeight: 700, fontSize: 14,
+              }}>Iniciar sesión</motion.button>
             </div>
           </div>
         </div>

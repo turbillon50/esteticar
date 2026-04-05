@@ -6,6 +6,8 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { BsArrowLeft, BsEnvelopeFill, BsLockFill, BsArrowRight } from "react-icons/bs";
 
+const BG = "linear-gradient(160deg, #020b1a 0%, #03045e 30%, #0077b6 70%, #00b4d8 100%)";
+
 export default function Login() {
   const [, navigate] = useLocation();
   const { refetchUser } = useAuth();
@@ -24,119 +26,137 @@ export default function Login() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#f5f6f8" }}>
+    <div style={{ minHeight: "100dvh", background: BG, display: "flex", flexDirection: "column" }}>
 
-      {/* Dark top section */}
-      <div
-        className="relative overflow-hidden px-5 pt-14 pb-20"
-        style={{ background: "linear-gradient(150deg, #0A1628 0%, #0d2240 70%, #0f2d54 100%)" }}
-      >
-        <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-10"
-          style={{ background: "radial-gradient(circle, #00B4D8, transparent 70%)", transform: "translate(30%, -30%)" }} />
+      {/* Bubble overlays */}
+      {[
+        { size: 200, top: -60, right: -60, op: 0.10 },
+        { size: 120, top: 140, left: -30, op: 0.08 },
+        { size: 80, bottom: 200, right: 30, op: 0.10 },
+      ].map((b, i) => (
+        <div key={i} style={{
+          position: "absolute", width: b.size, height: b.size, borderRadius: "50%",
+          border: "1.5px solid rgba(255,255,255,0.2)",
+          background: `rgba(72,202,228,${b.op})`,
+          top: (b as any).top, bottom: (b as any).bottom,
+          right: (b as any).right, left: (b as any).left,
+          pointerEvents: "none", backdropFilter: "blur(2px)",
+        }} />
+      ))}
 
+      {/* Header */}
+      <div style={{ padding: "52px 22px 0", position: "relative", zIndex: 1 }}>
         <button
           onClick={() => navigate("/")}
-          className="w-10 h-10 rounded-full flex items-center justify-center mb-8 relative z-10"
-          style={{ background: "rgba(255,255,255,0.10)" }}
+          style={{
+            width: 42, height: 42, borderRadius: "50%",
+            background: "rgba(255,255,255,0.12)",
+            border: "1px solid rgba(255,255,255,0.2)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            marginBottom: 32,
+          }}
         >
-          <BsArrowLeft className="text-white text-lg" />
+          <BsArrowLeft style={{ color: "#fff", fontSize: 18 }} />
         </button>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-          className="relative z-10"
-        >
-          <div
-            className="w-14 h-14 rounded-3xl flex items-center justify-center mb-5"
-            style={{ background: "linear-gradient(135deg, #00B4D8, #0094b3)" }}
-          >
-            <span className="text-white font-black text-xl">E</span>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: 18, marginBottom: 20,
+            background: "linear-gradient(135deg, #48cae4 0%, #0096c7 100%)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{ color: "#fff", fontWeight: 900, fontSize: 22 }}>E</span>
           </div>
-          <h1 className="text-3xl font-black text-white mb-1">Bienvenido</h1>
-          <p className="text-white/50 text-sm">Inicia sesión para reservar tu lavado</p>
+          <p style={{ color: "#fff", fontSize: 32, fontWeight: 900, marginBottom: 6 }}>Bienvenido</p>
+          <p style={{ color: "rgba(144,224,239,0.75)", fontSize: 14 }}>Inicia sesión para reservar tu lavado</p>
         </motion.div>
       </div>
 
-      {/* White card overlapping */}
+      {/* Card */}
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, delay: 0.08 }}
-        className="flex-1 px-4 -mt-10 relative z-10"
+        transition={{ duration: 0.4, delay: 0.1 }}
+        style={{ flex: 1, padding: "28px 16px 20px", position: "relative", zIndex: 1 }}
       >
-        <div
-          className="rounded-3xl p-5 mb-4"
-          style={{ background: "#ffffff", boxShadow: "0 8px 40px rgba(10,22,40,0.10)" }}
-        >
-          <form onSubmit={(e) => { e.preventDefault(); login.mutate({ data: { email, password } }); }}
-            className="space-y-3">
-            <div className="relative">
-              <BsEnvelopeFill
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-sm"
-                style={{ color: "#9ca3af" }}
-              />
-              <input
-                type="email"
-                placeholder="Correo electrónico"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full h-13 pl-11 pr-4 rounded-2xl text-sm font-medium outline-none"
-                style={{ background: "#f5f6f8", color: "#0A1628", height: 52 }}
-              />
-            </div>
-            <div className="relative">
-              <BsLockFill
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-sm"
-                style={{ color: "#9ca3af" }}
-              />
-              <input
-                type="password"
-                placeholder="Contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full pl-11 pr-4 rounded-2xl text-sm font-medium outline-none"
-                style={{ background: "#f5f6f8", color: "#0A1628", height: 52 }}
-              />
-            </div>
+        <div style={{
+          background: "rgba(255,255,255,0.97)",
+          borderRadius: 28,
+          padding: "24px 20px",
+          boxShadow: "0 20px 60px rgba(3,4,94,0.35)",
+          backdropFilter: "blur(20px)",
+          border: "1px solid rgba(255,255,255,0.8)",
+        }}>
+          <form
+            onSubmit={e => { e.preventDefault(); login.mutate({ data: { email, password } }); }}
+            style={{ display: "flex", flexDirection: "column", gap: 12 }}
+          >
+            {[
+              { value: email, set: setEmail, placeholder: "Correo electrónico", type: "email", Icon: BsEnvelopeFill },
+              { value: password, set: setPassword, placeholder: "Contraseña", type: "password", Icon: BsLockFill },
+            ].map(({ value, set, placeholder, type, Icon }) => (
+              <div key={placeholder} style={{ position: "relative" }}>
+                <Icon style={{
+                  position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)",
+                  color: "#90a0b7", fontSize: 14,
+                }} />
+                <input
+                  type={type}
+                  placeholder={placeholder}
+                  value={value}
+                  onChange={e => set(e.target.value)}
+                  required
+                  style={{
+                    width: "100%", height: 52, paddingLeft: 42, paddingRight: 16,
+                    borderRadius: 14, border: "none", outline: "none",
+                    background: "#f0f4f8", color: "#03045e",
+                    fontSize: 14, fontWeight: 600,
+                    fontFamily: "inherit",
+                  }}
+                />
+              </div>
+            ))}
 
             <motion.button
               type="submit"
               disabled={login.isPending}
               whileTap={{ scale: 0.97 }}
-              className="w-full font-black text-white rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
               style={{
-                background: "linear-gradient(135deg, #0A1628 0%, #0d2240 100%)",
-                height: 52,
-                fontSize: 15,
+                width: "100%", height: 52, borderRadius: 14,
+                background: "linear-gradient(135deg, #03045e 0%, #0077b6 60%, #00b4d8 100%)",
+                color: "#fff", fontWeight: 900, fontSize: 15,
+                border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                boxShadow: "0 6px 24px rgba(3,4,94,0.35)",
+                opacity: login.isPending ? 0.6 : 1,
+                fontFamily: "inherit",
+                marginTop: 4,
               }}
             >
               {login.isPending ? "Ingresando..." : (<>Iniciar sesión <BsArrowRight /></>)}
             </motion.button>
           </form>
 
-          <div className="text-center mt-4">
-            <p className="text-sm" style={{ color: "#9ca3af" }}>
-              ¿No tienes cuenta?{" "}
-              <button onClick={() => navigate("/register")}
-                className="font-black" style={{ color: "#00B4D8" }}>
-                Regístrate
-              </button>
-            </p>
-          </div>
+          <p style={{ textAlign: "center", marginTop: 16, fontSize: 14, color: "#90a0b7" }}>
+            ¿No tienes cuenta?{" "}
+            <button onClick={() => navigate("/register")}
+              style={{ color: "#0077b6", fontWeight: 800, background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}>
+              Regístrate
+            </button>
+          </p>
         </div>
 
         {/* Demo hint */}
-        <div
-          className="rounded-2xl p-4"
-          style={{ background: "rgba(0,180,216,0.08)", border: "1px solid rgba(0,180,216,0.2)" }}
-        >
-          <p className="text-xs font-black mb-1.5" style={{ color: "#00B4D8" }}>Cuentas de demo</p>
-          <p className="text-xs font-medium" style={{ color: "#6b7280" }}>Admin: admin@esteticar.mx / admin123</p>
-          <p className="text-xs font-medium" style={{ color: "#6b7280" }}>Proveedor: juan@esteticar.mx / washer123</p>
+        <div style={{
+          marginTop: 14, borderRadius: 18, padding: "14px 18px",
+          background: "rgba(72,202,228,0.12)",
+          border: "1px solid rgba(72,202,228,0.25)",
+        }}>
+          <p style={{ color: "#48cae4", fontSize: 11, fontWeight: 800, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Demo
+          </p>
+          <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontFamily: "monospace" }}>Admin: admin@esteticar.mx / admin123</p>
+          <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontFamily: "monospace" }}>Proveedor: juan@esteticar.mx / washer123</p>
         </div>
       </motion.div>
     </div>
