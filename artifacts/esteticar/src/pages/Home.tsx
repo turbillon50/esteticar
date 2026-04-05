@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
   useListServices,
@@ -7,529 +7,555 @@ import {
   getGetDashboardSummaryQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/components/AuthProvider";
-import { motion } from "framer-motion";
-import { BsArrowRight, BsStarFill, BsClock, BsGeoAlt, BsCalendar3, BsBell } from "react-icons/bs";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  BsArrowRight, BsStarFill, BsClock, BsGeoAlt,
+  BsDropletFill, BsShieldFill, BsXLg,
+} from "react-icons/bs";
+import { HiShare } from "react-icons/hi2";
 
-/* ── Cinematic gradients — water / foam / splash ───────────── */
-const SERVICE_GRADIENTS = [
-  "linear-gradient(145deg, #03045e 0%, #0077b6 45%, #00b4d8 80%, #90e0ef 100%)",
-  "linear-gradient(145deg, #005f73 0%, #0a9396 50%, #94d2bd 90%, #e9f5db 100%)",
-  "linear-gradient(145deg, #1a1a2e 0%, #16213e 30%, #0f3460 65%, #00b4d8 100%)",
-  "linear-gradient(145deg, #023e8a 0%, #0096c7 55%, #48cae4 85%, #ade8f4 100%)",
+/* ─── Unsplash image pool (car wash / foam / premium auto) ─ */
+const HERO_IMG = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&q=85";
+
+const SERVICE_IMGS = [
+  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
+  "https://images.unsplash.com/photo-1607860108855-64acf2078ed9?w=800&q=80",
+  "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80",
 ];
 
-const HERO_GRADIENT =
-  "linear-gradient(160deg, #03045e 0%, #023e8a 25%, #0077b6 55%, #00b4d8 80%, #48cae4 100%)";
+const LOCATION_IMGS = [
+  "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=400&q=70",
+  "https://images.unsplash.com/photo-1562247647-48c0f3d8e58d?w=400&q=70",
+  "https://images.unsplash.com/photo-1622479986060-8b1d22baa6fb?w=400&q=70",
+];
 
-const FEATURED_GRADIENT =
-  "linear-gradient(135deg, #0a1628 0%, #005f73 40%, #0096c7 70%, #48cae4 100%)";
+const GRADIENTS = [
+  "linear-gradient(145deg,#03045e 0%,#0077b6 45%,#00b4d8 80%,#90e0ef 100%)",
+  "linear-gradient(145deg,#005f73 0%,#0a9396 50%,#48cae4 85%,#caf0f8 100%)",
+  "linear-gradient(145deg,#10002b 0%,#3a0ca3 45%,#4cc9f0 100%)",
+];
 
-/* ── HERO CARD ─────────────────────────────────────────────── */
-function HeroCard({ isAuthenticated, navigate, name }: any) {
+/* ─── PWA Install Banner ──────────────────────────────────── */
+function PWABanner() {
+  const [visible, setVisible] = useState(false);
+  const [platform, setPlatform] = useState<"ios" | "android" | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const dismissed = localStorage.getItem("pwa-dismissed");
+    if (dismissed) return;
+
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+      || (window.navigator as any).standalone;
+    if (isStandalone) return;
+
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/.test(ua) && !(window as any).MSStream;
+    const isAndroid = /Android/.test(ua);
+
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setPlatform("android");
+      setVisible(true);
+    };
+
+    window.addEventListener("beforeinstallprompt", handler as any);
+
+    if (isIOS) {
+      setPlatform("ios");
+      setTimeout(() => setVisible(true), 1500);
+    }
+
+    return () => window.removeEventListener("beforeinstallprompt", handler as any);
+  }, []);
+
+  const dismiss = () => {
+    setVisible(false);
+    localStorage.setItem("pwa-dismissed", "1");
+  };
+
+  const install = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") dismiss();
+    }
+  };
+
+  if (!visible) return null;
+
   return (
-    <div
-      className="relative overflow-hidden flex flex-col justify-between"
-      style={{
-        background: HERO_GRADIENT,
-        borderRadius: 28,
-        minHeight: 320,
-        padding: "28px 24px 24px",
-      }}
-    >
-      {/* Foam / bubble overlays */}
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 60% 40% at 85% 15%, rgba(144,224,239,0.25) 0%, transparent 60%)",
-      }} />
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 40% 50% at 10% 80%, rgba(0,180,216,0.20) 0%, transparent 55%)",
-      }} />
-      {/* Bubbles */}
-      {[
-        { size: 80, top: -20, right: -20, op: 0.12 },
-        { size: 50, top: 60, right: 30, op: 0.10 },
-        { size: 120, bottom: -30, right: 40, op: 0.08 },
-        { size: 35, top: 120, left: 20, op: 0.15 },
-      ].map((b, i) => (
-        <div key={i} style={{
-          position: "absolute",
-          width: b.size, height: b.size,
-          borderRadius: "50%",
-          border: "1.5px solid rgba(255,255,255,0.3)",
-          background: `rgba(255,255,255,${b.op})`,
-          top: b.top, bottom: (b as any).bottom,
-          right: (b as any).right, left: (b as any).left,
-          pointerEvents: "none",
-          backdropFilter: "blur(2px)",
-        }} />
-      ))}
-
-      {/* Top row */}
-      <div className="flex items-start justify-between relative z-10">
-        <div>
-          {isAuthenticated ? (
-            <>
-              <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
-                {new Date().getHours() < 12 ? "Buenos días" : new Date().getHours() < 19 ? "Buenas tardes" : "Buenas noches"} 👋
-              </p>
-              <p style={{ color: "#fff", fontSize: 26, fontWeight: 900, lineHeight: 1.1 }}>
-                {name?.split(" ")[0]}
-              </p>
-            </>
-          ) : (
-            <>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                <div style={{
-                  width: 30, height: 30, borderRadius: "50%",
-                  background: "linear-gradient(135deg, #48cae4, #0096c7)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 13, fontWeight: 900, color: "#fff",
-                }}>E</div>
-                <span style={{ color: "rgba(255,255,255,0.9)", fontWeight: 800, letterSpacing: "0.12em", fontSize: 12 }}>ESTETICAR</span>
-              </div>
-              <p style={{ color: "#fff", fontSize: 30, fontWeight: 900, lineHeight: 1.1, marginBottom: 8 }}>
-                Tu auto merece<br />lo mejor.
-              </p>
-              <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 14, fontWeight: 500 }}>
-                Sin filas. Sin esperas. Solo reserva.
-              </p>
-            </>
-          )}
-        </div>
-        {isAuthenticated && (
-          <button style={{
-            width: 40, height: 40, borderRadius: "50%",
-            background: "rgba(255,255,255,0.12)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            backdropFilter: "blur(8px)",
-          }}>
-            <BsBell style={{ color: "#fff", fontSize: 16 }} />
-          </button>
-        )}
-      </div>
-
-      {/* CTA Button */}
-      <motion.button
-        whileTap={{ scale: 0.96 }}
-        onClick={() => navigate(isAuthenticated ? "/book" : "/login")}
-        className="relative z-10"
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 30 }}
         style={{
-          width: "100%",
-          height: 52,
-          borderRadius: 16,
-          background: "rgba(255,255,255,0.15)",
-          border: "1.5px solid rgba(255,255,255,0.35)",
-          backdropFilter: "blur(12px)",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 18px",
-          marginTop: 24,
+          margin: "0 16px",
+          borderRadius: 22,
+          overflow: "hidden",
+          background: "linear-gradient(135deg,#03045e 0%,#0077b6 60%,#00b4d8 100%)",
+          boxShadow: "0 8px 32px rgba(3,4,94,0.3)",
+          position: "relative",
         }}
       >
-        <div style={{ textAlign: "left" }}>
-          <p style={{ color: "#fff", fontWeight: 900, fontSize: 15 }}>Agendar lavado</p>
-          <p style={{ color: "rgba(144,224,239,0.75)", fontSize: 11, fontWeight: 500, marginTop: 1 }}>
-            Servicio · sucursal · horario
-          </p>
+        {/* Foam overlay */}
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          background: "radial-gradient(ellipse 60% 50% at 85% 20%, rgba(144,224,239,0.25) 0%, transparent 60%)",
+        }} />
+        <div style={{ padding: "18px 18px 20px", position: "relative", zIndex: 1 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 18, fontWeight: 900, color: "#fff",
+              }}>E</div>
+              <div>
+                <p style={{ color: "#fff", fontWeight: 900, fontSize: 14 }}>Instalar Esteticar</p>
+                <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 11 }}>Acceso directo desde tu pantalla</p>
+              </div>
+            </div>
+            <button onClick={dismiss} style={{
+              width: 28, height: 28, borderRadius: "50%",
+              background: "rgba(255,255,255,0.15)", border: "none",
+              display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+            }}>
+              <BsXLg style={{ color: "rgba(255,255,255,0.7)", fontSize: 10 }} />
+            </button>
+          </div>
+
+          {platform === "ios" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {[
+                { n: 1, text: <>Toca <HiShare style={{ display:"inline", verticalAlign:"middle" }} /> en Safari</> },
+                { n: 2, text: "Selecciona \"Agregar a pantalla de inicio\"" },
+                { n: 3, text: "Toca \"Agregar\" — listo" },
+              ].map(({ n, text }) => (
+                <div key={n} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{
+                    width: 22, height: 22, borderRadius: "50%", flexShrink: 0,
+                    background: "rgba(255,255,255,0.2)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "#fff", fontSize: 11, fontWeight: 800,
+                  }}>{n}</div>
+                  <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 12 }}>{text}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={install}
+              style={{
+                width: "100%", height: 44, borderRadius: 14,
+                background: "rgba(255,255,255,0.18)",
+                border: "1.5px solid rgba(255,255,255,0.35)",
+                color: "#fff", fontWeight: 800, fontSize: 14,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                cursor: "pointer", fontFamily: "inherit",
+              }}
+            >
+              Agregar a pantalla de inicio <BsArrowRight />
+            </motion.button>
+          )}
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+/* ─── HERO ────────────────────────────────────────────────── */
+function Hero({ isAuthenticated, navigate, name }: any) {
+  return (
+    <div style={{ position: "relative", height: 360, overflow: "hidden", borderRadius: "0 0 32px 32px" }}>
+      {/* Real car wash photo */}
+      <img
+        src={HERO_IMG}
+        alt="Car wash"
+        style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+      />
+      {/* Cinematic gradient overlay */}
+      <div style={{
+        position: "absolute", inset: 0,
+        background: "linear-gradient(180deg, rgba(3,4,94,0.55) 0%, rgba(0,119,182,0.35) 40%, rgba(0,180,216,0.6) 80%, rgba(3,4,94,0.9) 100%)",
+      }} />
+      {/* Top: branding */}
+      <div style={{ position: "absolute", top: 52, left: 20, right: 20, display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 2 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 10,
+            background: "rgba(255,255,255,0.15)", backdropFilter: "blur(10px)",
+            border: "1px solid rgba(255,255,255,0.3)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 15, fontWeight: 900, color: "#fff",
+          }}>E</div>
+          <span style={{ color: "#fff", fontWeight: 900, letterSpacing: "0.1em", fontSize: 12 }}>ESTETICAR</span>
         </div>
         <div style={{
-          width: 34, height: 34, borderRadius: "50%",
-          background: "linear-gradient(135deg, #00b4d8, #0077b6)",
-          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(0,180,216,0.25)", backdropFilter: "blur(10px)",
+          border: "1px solid rgba(72,202,228,0.4)",
+          borderRadius: 20, padding: "4px 12px",
         }}>
-          <BsArrowRight style={{ color: "#fff", fontSize: 14 }} />
+          <span style={{ color: "#48cae4", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            Cuernavaca, Mor.
+          </span>
         </div>
-      </motion.button>
+      </div>
+      {/* Bottom: headline + CTA */}
+      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "0 20px 24px", zIndex: 2 }}>
+        {isAuthenticated ? (
+          <p style={{ color: "rgba(144,224,239,0.9)", fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Bienvenido, {name?.split(" ")[0]}</p>
+        ) : null}
+        <p style={{ color: "#fff", fontSize: 34, fontWeight: 900, lineHeight: 1.05, marginBottom: 16 }}>
+          Tu auto merece<br />lo mejor.
+        </p>
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={() => navigate("/book")}
+          style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            width: "100%", height: 56, borderRadius: 18,
+            background: "rgba(255,255,255,0.14)", backdropFilter: "blur(16px)",
+            border: "1.5px solid rgba(255,255,255,0.35)",
+            padding: "0 18px", cursor: "pointer",
+          }}
+        >
+          <div>
+            <p style={{ color: "#fff", fontWeight: 900, fontSize: 15, textAlign: "left" }}>Agendar lavado</p>
+            <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 11, textAlign: "left" }}>Elige servicio · sucursal · horario</p>
+          </div>
+          <div style={{
+            width: 38, height: 38, borderRadius: "50%",
+            background: "linear-gradient(135deg,#00b4d8,#0077b6)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 14px rgba(0,180,216,0.5)",
+          }}>
+            <BsArrowRight style={{ color: "#fff", fontSize: 16 }} />
+          </div>
+        </motion.button>
+      </div>
     </div>
   );
 }
 
-/* ── APPLE-STYLE FEATURED CARD ─────────────────────────────── */
-function FeaturedCard({ service, gradient, onClick }: any) {
+/* ─── STATS STRIP ─────────────────────────────────────────── */
+function StatsStrip() {
+  const stats = [
+    { icon: <BsDropletFill />, val: "3,200+", label: "Lavados" },
+    { icon: <BsStarFill />, val: "4.9", label: "Calificación" },
+    { icon: <BsShieldFill />, val: "100%", label: "Garantía" },
+  ];
   return (
-    <motion.button
-      whileTap={{ scale: 0.97 }}
-      onClick={onClick}
-      className="flex-shrink-0"
-      style={{
-        width: "85vw",
-        maxWidth: 360,
-        borderRadius: 24,
-        overflow: "hidden",
-        background: gradient,
-        position: "relative",
-        boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
-        scrollSnapAlign: "center",
-      }}
-    >
-      {/* Foam shimmer */}
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 70% 50% at 80% 20%, rgba(255,255,255,0.18) 0%, transparent 60%)",
-      }} />
-      {/* Bubbles */}
-      {[
-        { w: 90, h: 90, top: -15, right: -15, op: 0.12 },
-        { w: 55, h: 55, top: 50, right: 20, op: 0.09 },
-        { w: 40, h: 40, bottom: 60, left: 15, op: 0.10 },
-      ].map((b, i) => (
-        <div key={i} style={{
-          position: "absolute",
-          width: b.w, height: b.h, borderRadius: "50%",
-          border: "1px solid rgba(255,255,255,0.25)",
-          background: `rgba(255,255,255,${b.op})`,
-          top: (b as any).top, bottom: (b as any).bottom,
-          right: (b as any).right, left: (b as any).left,
-        }} />
-      ))}
-
-      {/* Image */}
-      <div style={{ height: 180, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
-        {service.imageUrl ? (
-          <img src={service.imageUrl} alt={service.name}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
-          <div style={{ fontSize: 72, fontWeight: 900, color: "rgba(255,255,255,0.15)", letterSpacing: -4 }}>
-            ✦✦
-          </div>
-        )}
-      </div>
-
-      {/* Info */}
-      <div style={{ padding: "16px 20px 20px", position: "relative", zIndex: 1 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-          <span style={{
-            fontSize: 10, fontWeight: 800, color: "rgba(144,224,239,0.9)",
-            textTransform: "uppercase", letterSpacing: "0.12em",
-          }}>
-            Servicio destacado
-          </span>
-        </div>
-        <p style={{ color: "#fff", fontSize: 22, fontWeight: 900, lineHeight: 1.1, marginBottom: 8 }}>
-          {service.name}
-        </p>
-        <p style={{ color: "rgba(255,255,255,0.65)", fontSize: 13, lineHeight: 1.4, marginBottom: 14 }}>
-          {service.description?.slice(0, 70)}…
-        </p>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <BsClock style={{ color: "rgba(144,224,239,0.7)", fontSize: 11 }} />
-            <span style={{ color: "rgba(144,224,239,0.8)", fontSize: 12, fontWeight: 600 }}>
-              {service.durationMinutes} min
-            </span>
-          </div>
-          <div style={{
-            display: "flex", alignItems: "center", gap: 8,
-            background: "rgba(255,255,255,0.15)",
-            border: "1px solid rgba(255,255,255,0.25)",
-            borderRadius: 20, padding: "5px 14px",
-            backdropFilter: "blur(8px)",
-          }}>
-            <span style={{ color: "#fff", fontSize: 16, fontWeight: 900 }}>
-              ${Number(service.price).toLocaleString()}
-            </span>
-            <BsArrowRight style={{ color: "rgba(144,224,239,0.9)", fontSize: 12 }} />
-          </div>
-        </div>
-      </div>
-    </motion.button>
-  );
-}
-
-/* ── LOCATION ROW ───────────────────────────────────────────── */
-function LocationRow({ location, onClick }: any) {
-  return (
-    <motion.button
-      whileTap={{ scale: 0.97 }}
-      onClick={onClick}
-      style={{
-        display: "flex", alignItems: "center", gap: 14,
-        padding: "14px 16px",
-        background: "#fff",
-        borderRadius: 18,
-        width: "100%",
-        textAlign: "left",
-        boxShadow: "0 2px 12px rgba(3,4,94,0.08)",
-      }}
-    >
-      <div style={{
-        width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-        background: "linear-gradient(135deg, #0077b6, #00b4d8)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-      }}>
-        <BsGeoAlt style={{ color: "#fff", fontSize: 18 }} />
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ color: "#03045e", fontWeight: 800, fontSize: 14, marginBottom: 2 }}>{location.name}</p>
-        <p style={{ color: "#90a0b0", fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {location.address}
-        </p>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-        <BsStarFill style={{ color: "#fbbf24", fontSize: 11 }} />
-        <span style={{ color: "#03045e", fontSize: 13, fontWeight: 700 }}>4.9</span>
-      </div>
-    </motion.button>
-  );
-}
-
-/* ── MINI SERVICE CHIP ─────────────────────────────────────── */
-function ServiceChip({ service, gradient, onClick }: any) {
-  return (
-    <motion.button
-      whileTap={{ scale: 0.93 }}
-      onClick={onClick}
-      style={{
-        flexShrink: 0, width: 130,
-        borderRadius: 20, overflow: "hidden",
-        background: gradient,
-        boxShadow: "0 4px 16px rgba(3,4,94,0.15)",
-        position: "relative",
-      }}
-    >
-      {/* shimmer */}
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        background: "radial-gradient(ellipse 80% 50% at 70% 0%, rgba(255,255,255,0.18) 0%, transparent 60%)",
-      }} />
-      <div style={{ height: 90, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
-        {service.imageUrl
-          ? <img src={service.imageUrl} alt={service.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          : <span style={{ fontSize: 34, fontWeight: 900, color: "rgba(255,255,255,0.18)" }}>✦</span>
-        }
-        <div style={{
-          position: "absolute", top: 8, right: 8,
-          background: "rgba(255,255,255,0.18)", backdropFilter: "blur(6px)",
-          borderRadius: 10, padding: "3px 8px",
-          border: "1px solid rgba(255,255,255,0.25)",
+    <div style={{
+      display: "flex", gap: 0,
+      margin: "16px 16px 0",
+      borderRadius: 20, overflow: "hidden",
+      boxShadow: "0 4px 20px rgba(3,4,94,0.12)",
+    }}>
+      {stats.map(({ icon, val, label }, i) => (
+        <div key={label} style={{
+          flex: 1, padding: "14px 0", textAlign: "center",
+          background: i === 1
+            ? "linear-gradient(135deg,#0077b6,#00b4d8)"
+            : "#fff",
+          borderRight: i < 2 ? "1px solid rgba(3,4,94,0.06)" : undefined,
         }}>
-          <span style={{ color: "#fff", fontSize: 11, fontWeight: 800 }}>
+          <div style={{ color: i === 1 ? "rgba(255,255,255,0.8)" : "#00b4d8", fontSize: 14, marginBottom: 3 }}>{icon}</div>
+          <p style={{ fontWeight: 900, fontSize: 17, color: i === 1 ? "#fff" : "#03045e", lineHeight: 1 }}>{val}</p>
+          <p style={{ fontSize: 10, color: i === 1 ? "rgba(255,255,255,0.7)" : "#90a0b7", fontWeight: 600, marginTop: 2 }}>{label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── FEATURED SERVICE CARD ───────────────────────────────── */
+function ServiceCard({ service, gradient, imgFallback, onClick, index }: any) {
+  const img = service.imageUrl?.startsWith("http") ? service.imageUrl : imgFallback;
+  return (
+    <motion.button
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      initial={{ opacity: 0, x: 30 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.08 }}
+      style={{
+        flexShrink: 0, width: "82vw", maxWidth: 340,
+        borderRadius: 26, overflow: "hidden",
+        background: gradient, position: "relative",
+        boxShadow: "0 16px 48px rgba(3,4,94,0.28)",
+        scrollSnapAlign: "start", cursor: "pointer",
+      }}
+    >
+      {/* Photo */}
+      <div style={{ height: 190, position: "relative", overflow: "hidden" }}>
+        <img src={img} alt={service.name}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        {/* gradient over photo */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(180deg, transparent 40%, rgba(3,4,94,0.7) 100%)",
+        }} />
+        {/* Price badge */}
+        <div style={{
+          position: "absolute", top: 14, right: 14,
+          background: "rgba(0,0,0,0.5)", backdropFilter: "blur(12px)",
+          border: "1px solid rgba(255,255,255,0.25)",
+          borderRadius: 12, padding: "6px 14px",
+        }}>
+          <span style={{ color: "#fff", fontWeight: 900, fontSize: 17 }}>
             ${Number(service.price).toLocaleString()}
           </span>
         </div>
+        {/* Category chip */}
+        <div style={{
+          position: "absolute", top: 14, left: 14,
+          background: "rgba(0,180,216,0.3)", backdropFilter: "blur(8px)",
+          border: "1px solid rgba(72,202,228,0.4)",
+          borderRadius: 10, padding: "4px 10px",
+        }}>
+          <span style={{ color: "#48cae4", fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            Destacado
+          </span>
+        </div>
       </div>
-      <div style={{ padding: "10px 12px 12px" }}>
-        <p style={{ color: "#fff", fontWeight: 800, fontSize: 12, lineHeight: 1.2, marginBottom: 4 }}>{service.name}</p>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <BsClock style={{ color: "rgba(144,224,239,0.8)", fontSize: 9 }} />
-          <span style={{ color: "rgba(144,224,239,0.8)", fontSize: 10, fontWeight: 600 }}>{service.durationMinutes} min</span>
+
+      {/* Info */}
+      <div style={{ padding: "16px 20px 20px" }}>
+        <p style={{ color: "#fff", fontSize: 22, fontWeight: 900, lineHeight: 1.1, marginBottom: 8 }}>
+          {service.name}
+        </p>
+        <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, lineHeight: 1.5, marginBottom: 14, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+          {service.description}
+        </p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{
+            display: "flex", alignItems: "center", gap: 5,
+            background: "rgba(255,255,255,0.12)", borderRadius: 20,
+            padding: "5px 12px", border: "1px solid rgba(255,255,255,0.15)",
+          }}>
+            <BsClock style={{ color: "#48cae4", fontSize: 11 }} />
+            <span style={{ color: "#48cae4", fontSize: 12, fontWeight: 700 }}>{service.durationMinutes} min</span>
+          </div>
+          <div style={{
+            background: "linear-gradient(135deg,rgba(255,255,255,0.2),rgba(255,255,255,0.08))",
+            border: "1px solid rgba(255,255,255,0.3)",
+            borderRadius: 14, padding: "8px 16px",
+            display: "flex", alignItems: "center", gap: 6,
+            backdropFilter: "blur(8px)",
+          }}>
+            <span style={{ color: "#fff", fontWeight: 900, fontSize: 13 }}>Reservar</span>
+            <BsArrowRight style={{ color: "#48cae4", fontSize: 11 }} />
+          </div>
         </div>
       </div>
     </motion.button>
   );
 }
 
-/* ── PAGE ───────────────────────────────────────────────────── */
+/* ─── LOCATION CARD ───────────────────────────────────────── */
+function LocationCard({ location, img, onClick, index }: any) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.07 }}
+      style={{
+        display: "flex", alignItems: "center", gap: 0,
+        borderRadius: 20, overflow: "hidden",
+        background: "#fff",
+        boxShadow: "0 4px 20px rgba(3,4,94,0.10)",
+        width: "100%", cursor: "pointer",
+        textAlign: "left",
+      }}
+    >
+      {/* Photo thumbnail */}
+      <div style={{ width: 88, height: 80, flexShrink: 0, position: "relative", overflow: "hidden" }}>
+        <img src={img} alt={location.name}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(90deg, transparent 60%, rgba(255,255,255,0.7) 100%)",
+        }} />
+      </div>
+      {/* Info */}
+      <div style={{ flex: 1, padding: "0 14px" }}>
+        <p style={{ color: "#03045e", fontWeight: 900, fontSize: 14, marginBottom: 3 }}>{location.name}</p>
+        <p style={{ color: "#90a0b7", fontSize: 11, lineHeight: 1.3, marginBottom: 5 }}>{location.address}</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+          <BsGeoAlt style={{ color: "#0077b6", fontSize: 10 }} />
+          <span style={{ color: "#0077b6", fontSize: 10, fontWeight: 700 }}>Ver en mapa</span>
+        </div>
+      </div>
+      {/* Rating */}
+      <div style={{ padding: "0 16px 0 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+        <BsStarFill style={{ color: "#fbbf24", fontSize: 14 }} />
+        <span style={{ color: "#03045e", fontWeight: 900, fontSize: 14 }}>4.9</span>
+      </div>
+    </motion.button>
+  );
+}
+
+/* ─── PAGE ────────────────────────────────────────────────── */
 export default function Home() {
   const [, navigate] = useLocation();
   const { user, isAuthenticated } = useAuth();
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: services } = useListServices();
   const { data: locations } = useListLocations();
-  const { data: dashboard } = useGetDashboardSummary({
+  useGetDashboardSummary({
     query: {
       queryKey: getGetDashboardSummaryQueryKey(),
       enabled: isAuthenticated && user?.role === "customer",
     },
   });
 
-  const next = dashboard?.nextBooking;
-
   return (
-    <div style={{ minHeight: "100%", background: "#f0f4f8" }}>
+    <div style={{ minHeight: "100%", background: "#f0f4f8", paddingBottom: 20 }}>
 
       {/* ── HERO ── */}
-      <div style={{ padding: "52px 16px 0" }}>
-        <HeroCard isAuthenticated={isAuthenticated} navigate={navigate} name={user?.name} />
+      <Hero isAuthenticated={isAuthenticated} navigate={navigate} name={user?.name} />
+
+      {/* ── STATS ── */}
+      <StatsStrip />
+
+      {/* ── SERVICES TITLE ── */}
+      <div style={{ padding: "28px 20px 14px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <div>
+          <p style={{ color: "#0077b6", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 3 }}>
+            Nuestros servicios
+          </p>
+          <p style={{ color: "#03045e", fontSize: 24, fontWeight: 900, lineHeight: 1 }}>Destacados</p>
+        </div>
+        <button onClick={() => navigate("/services")}
+          style={{ color: "#0077b6", fontSize: 13, fontWeight: 700, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontFamily: "inherit" }}>
+          Ver todos <BsArrowRight style={{ fontSize: 11 }} />
+        </button>
       </div>
 
-      {/* ── UPCOMING BOOKING (customer) ── */}
-      {isAuthenticated && user?.role === "customer" && next && (
-        <div style={{ padding: "16px 16px 0" }}>
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              background: "linear-gradient(135deg, #03045e 0%, #0077b6 60%, #00b4d8 100%)",
-              borderRadius: 20, padding: "16px 18px",
-              position: "relative", overflow: "hidden",
-              boxShadow: "0 8px 30px rgba(3,4,94,0.25)",
-            }}
-          >
-            <div style={{
-              position: "absolute", top: -20, right: -20, width: 80, height: 80,
-              borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)",
-              background: "rgba(255,255,255,0.06)",
+      {/* ── SERVICES SCROLL ── */}
+      <div style={{
+        display: "flex", gap: 14, overflowX: "auto",
+        scrollSnapType: "x mandatory", padding: "4px 20px 8px",
+        scrollBehavior: "smooth",
+      }}>
+        {!services
+          ? GRADIENTS.map((g, i) => (
+            <div key={i} style={{
+              flexShrink: 0, width: "82vw", maxWidth: 340, height: 340,
+              borderRadius: 26, background: g, opacity: 0.25,
+              scrollSnapAlign: "start",
             }} />
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-              <div>
-                <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 4 }}>
-                  Próxima cita
-                </p>
-                <p style={{ color: "#fff", fontWeight: 900, fontSize: 16, marginBottom: 2 }}>{next.service?.name}</p>
-                <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12 }}>{next.location?.name}</p>
-                <p style={{ color: "rgba(144,224,239,0.9)", fontSize: 13, fontWeight: 700, marginTop: 6 }}>
-                  {new Date(next.date + "T00:00:00").toLocaleDateString("es-MX", { weekday: "short", month: "short", day: "numeric" })} · {next.startTime}
-                </p>
-              </div>
-              <button
-                onClick={() => navigate("/bookings")}
-                style={{
-                  background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)",
-                  borderRadius: 12, padding: "6px 14px",
-                  color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: 700,
-                }}
-              >Ver</button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+          ))
+          : services.map((s, i) => (
+            <ServiceCard
+              key={s.id} service={s}
+              gradient={GRADIENTS[i % GRADIENTS.length]}
+              imgFallback={SERVICE_IMGS[i % SERVICE_IMGS.length]}
+              onClick={() => navigate("/book")}
+              index={i}
+            />
+          ))
+        }
+      </div>
 
-      {/* ── STATS (customer) ── */}
-      {isAuthenticated && user?.role === "customer" && dashboard && (
-        <div style={{ padding: "14px 16px 0", display: "flex", gap: 10 }}>
-          {[
-            { val: dashboard.upcomingCount, label: "Próximas", grad: "linear-gradient(135deg,#023e8a,#0096c7)" },
-            { val: dashboard.completedCount, label: "Completadas", grad: "linear-gradient(135deg,#005f73,#0a9396)" },
-          ].map(({ val, label, grad }) => (
-            <div key={label} style={{
-              flex: 1, borderRadius: 18, padding: "14px 16px",
-              background: grad, position: "relative", overflow: "hidden",
-              boxShadow: "0 4px 16px rgba(3,4,94,0.18)",
-            }}>
-              <div style={{
-                position: "absolute", top: -12, right: -12, width: 50, height: 50,
-                borderRadius: "50%", background: "rgba(255,255,255,0.08)",
-              }} />
-              <p style={{ color: "#fff", fontSize: 28, fontWeight: 900 }}>{val}</p>
-              <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 11, fontWeight: 600 }}>{label}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── FEATURED CARDS (Apple-style) ── */}
-      <div style={{ paddingTop: 28 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px 14px" }}>
-          <div>
-            <p style={{ color: "#90a0b7", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              Destacados
-            </p>
-            <p style={{ color: "#03045e", fontSize: 20, fontWeight: 900, lineHeight: 1.1 }}>Nuestros servicios</p>
+      {/* ── CITY BANNER ── */}
+      <div style={{ padding: "20px 16px 0" }}>
+        <div style={{
+          borderRadius: 22, overflow: "hidden", position: "relative", height: 120,
+        }}>
+          <img
+            src="https://images.unsplash.com/photo-1534430480872-3498386e7856?w=900&q=75"
+            alt="Cuernavaca"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "linear-gradient(90deg,rgba(3,4,94,0.85) 0%,rgba(0,119,182,0.6) 60%,transparent 100%)",
+          }} />
+          <div style={{ position: "absolute", top: "50%", left: 20, transform: "translateY(-50%)" }}>
+            <p style={{ color: "rgba(144,224,239,0.8)", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em" }}>Operamos en</p>
+            <p style={{ color: "#fff", fontSize: 22, fontWeight: 900, lineHeight: 1.1 }}>Cuernavaca,<br />Morelos</p>
           </div>
-          <button onClick={() => navigate("/services")}
-            style={{ color: "#0077b6", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
-            Ver todos <BsArrowRight style={{ fontSize: 11 }} />
-          </button>
-        </div>
-
-        {/* Horizontal snap scroll */}
-        <div
-          ref={scrollRef}
-          style={{
-            display: "flex", gap: 14,
-            overflowX: "auto", scrollSnapType: "x mandatory",
-            padding: "4px 20px 16px", scrollBehavior: "smooth",
-          }}
-        >
-          {!services
-            ? [1, 2].map(i => (
-              <div key={i} style={{
-                flexShrink: 0, width: "85vw", maxWidth: 360, height: 300,
-                borderRadius: 24, background: "linear-gradient(135deg, #023e8a, #0096c7)",
-                opacity: 0.3, scrollSnapAlign: "center",
-              }} />
-            ))
-            : services.map((s, i) => (
-              <FeaturedCard
-                key={s.id}
-                service={s}
-                gradient={SERVICE_GRADIENTS[i % SERVICE_GRADIENTS.length]}
-                onClick={() => navigate("/book")}
-              />
-            ))
-          }
         </div>
       </div>
 
-      {/* ── MINI SERVICES CHIP ROW ── */}
-      {services && services.length > 0 && (
-        <div style={{ paddingBottom: 4 }}>
-          <div style={{ display: "flex", gap: 12, overflowX: "auto", padding: "0 20px 4px" }}>
-            {services.map((s, i) => (
-              <ServiceChip
-                key={s.id}
-                service={s}
-                gradient={SERVICE_GRADIENTS[(i + 1) % SERVICE_GRADIENTS.length]}
-                onClick={() => navigate("/book")}
-              />
-            ))}
-          </div>
+      {/* ── LOCATIONS TITLE ── */}
+      <div style={{ padding: "24px 20px 14px", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <div>
+          <p style={{ color: "#0077b6", fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: 3 }}>
+            Dónde estamos
+          </p>
+          <p style={{ color: "#03045e", fontSize: 24, fontWeight: 900, lineHeight: 1 }}>Sucursales</p>
         </div>
-      )}
+        <button onClick={() => navigate("/locations")}
+          style={{ color: "#0077b6", fontSize: 13, fontWeight: 700, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontFamily: "inherit" }}>
+          Ver mapa <BsArrowRight style={{ fontSize: 11 }} />
+        </button>
+      </div>
 
       {/* ── LOCATIONS ── */}
-      <div style={{ padding: "24px 16px 0" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <div>
-            <p style={{ color: "#90a0b7", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-              Dónde estamos
-            </p>
-            <p style={{ color: "#03045e", fontSize: 20, fontWeight: 900 }}>Sucursales</p>
-          </div>
-          <button onClick={() => navigate("/locations")}
-            style={{ color: "#0077b6", fontSize: 13, fontWeight: 700, display: "flex", alignItems: "center", gap: 3 }}>
-            Ver mapa <BsArrowRight style={{ fontSize: 11 }} />
-          </button>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {!locations
-            ? [1, 2].map(i => <div key={i} style={{ height: 68, borderRadius: 18, background: "#e0e8f0" }} />)
-            : locations.map(l => (
-              <LocationRow key={l.id} location={l} onClick={() => navigate("/book")} />
-            ))
-          }
-        </div>
+      <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+        {!locations
+          ? [1, 2, 3].map(i => <div key={i} style={{ height: 80, borderRadius: 20, background: "#e0e8f0" }} />)
+          : locations.map((l, i) => (
+            <LocationCard
+              key={l.id} location={l}
+              img={LOCATION_IMGS[i % LOCATION_IMGS.length]}
+              onClick={() => navigate("/book")}
+              index={i}
+            />
+          ))
+        }
       </div>
 
-      {/* ── PUBLIC BOTTOM CTA ── */}
+      {/* ── PWA INSTALL BANNER ── */}
+      <div style={{ paddingTop: 20 }}>
+        <PWABanner />
+      </div>
+
+      {/* ── PUBLIC CTA ── */}
       {!isAuthenticated && (
-        <div style={{ padding: "24px 16px 28px" }}>
-          <div style={{
-            borderRadius: 24, overflow: "hidden",
-            background: "linear-gradient(145deg, #03045e 0%, #0077b6 50%, #00b4d8 100%)",
-            padding: "22px 22px 22px",
-            position: "relative",
-            boxShadow: "0 8px 32px rgba(3,4,94,0.25)",
-          }}>
-            {/* foam */}
+        <div style={{ padding: "20px 16px 0" }}>
+          <div style={{ position: "relative", borderRadius: 26, overflow: "hidden" }}>
+            {/* Photo bg */}
+            <img
+              src="https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=900&q=80"
+              alt="Luxury car"
+              style={{ width: "100%", height: 180, objectFit: "cover", objectPosition: "center 30%" }}
+            />
             <div style={{
-              position: "absolute", top: -30, right: -30, width: 120, height: 120,
-              borderRadius: "50%", border: "1px solid rgba(255,255,255,0.15)",
-              background: "rgba(255,255,255,0.06)", pointerEvents: "none",
+              position: "absolute", inset: 0,
+              background: "linear-gradient(180deg,rgba(3,4,94,0.4) 0%,rgba(3,4,94,0.92) 60%,#03045e 100%)",
             }} />
-            <p style={{ color: "#fff", fontSize: 20, fontWeight: 900, marginBottom: 4 }}>
-              Reserva en 2 minutos
-            </p>
-            <p style={{ color: "rgba(144,224,239,0.75)", fontSize: 13, marginBottom: 18 }}>
-              Crea tu cuenta y agenda tu primer lavado gratis.
-            </p>
-            <div style={{ display: "flex", gap: 10 }}>
-              <motion.button whileTap={{ scale: 0.96 }} onClick={() => navigate("/register")} style={{
-                flex: 1, height: 48, borderRadius: 14,
-                background: "rgba(255,255,255,0.18)",
-                border: "1.5px solid rgba(255,255,255,0.35)",
-                color: "#fff", fontWeight: 800, fontSize: 14,
-                backdropFilter: "blur(8px)",
-              }}>Crear cuenta</motion.button>
-              <motion.button whileTap={{ scale: 0.96 }} onClick={() => navigate("/login")} style={{
-                flex: 1, height: 48, borderRadius: 14,
-                background: "rgba(0,0,0,0.25)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                color: "rgba(255,255,255,0.7)", fontWeight: 700, fontSize: 14,
-              }}>Iniciar sesión</motion.button>
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "20px 20px 22px" }}>
+              <p style={{ color: "#fff", fontSize: 20, fontWeight: 900, marginBottom: 4 }}>Reserva en 2 minutos</p>
+              <p style={{ color: "rgba(144,224,239,0.75)", fontSize: 12, marginBottom: 16 }}>
+                Crea tu cuenta y agenda tu primer lavado.
+              </p>
+              <div style={{ display: "flex", gap: 10 }}>
+                <motion.button whileTap={{ scale: 0.96 }} onClick={() => navigate("/register")} style={{
+                  flex: 1, height: 46, borderRadius: 14,
+                  background: "linear-gradient(135deg,#00b4d8,#0077b6)",
+                  color: "#fff", fontWeight: 900, fontSize: 14,
+                  border: "none", cursor: "pointer", fontFamily: "inherit",
+                  boxShadow: "0 4px 16px rgba(0,119,182,0.4)",
+                }}>Crear cuenta</motion.button>
+                <motion.button whileTap={{ scale: 0.96 }} onClick={() => navigate("/login")} style={{
+                  flex: 1, height: 46, borderRadius: 14,
+                  background: "rgba(255,255,255,0.12)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  color: "rgba(255,255,255,0.8)", fontWeight: 700, fontSize: 14,
+                  cursor: "pointer", fontFamily: "inherit",
+                }}>Iniciar sesión</motion.button>
+              </div>
             </div>
           </div>
         </div>

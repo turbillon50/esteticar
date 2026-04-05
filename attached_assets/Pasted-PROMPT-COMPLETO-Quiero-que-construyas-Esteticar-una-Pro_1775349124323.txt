@@ -1,0 +1,91 @@
+PROMPT COMPLETO:
+
+Quiero que construyas Esteticar, una Progressive Web App (PWA) premium para reserva de lavado de autos en Guadalajara, México. Nivel de calidad: Apple App Store. El diseño debe rivalizar con las mejores apps de 2024 (Airbnb, Uber, Apple Music). No construyas algo básico — construye algo que haga sentir al usuario que está usando una app de lujo.
+
+IDENTIDAD VISUAL
+Nombre: Esteticar
+Tagline: Tu auto merece lo mejor.
+Ciudad: Guadalajara, Jalisco, México
+Paleta cinemática — temática agua / espuma / lavado:
+
+Profundo oceánico: #03045e
+Azul cobalto: #0077b6
+Aqua cielo: #00b4d8
+Espuma clara: #48cae4
+Fondo app: #f0f4f8
+Todos los fondos de secciones hero, tarjetas de servicios, botones primarios y headers deben usar degradados cinemáticos multi-stop tipo:
+
+linear-gradient(145deg, #03045e 0%, #0077b6 45%, #00b4d8 80%, #90e0ef 100%)
+
+Con burbujas decorativas de agua (círculos con border: 1px solid rgba(255,255,255,0.2) y fondo translúcido) flotando en las esquinas. Efecto de espuma con radial-gradient en overlay.
+
+ARQUITECTURA PWA
+Instalable como app nativa en iOS y Android
+manifest.json completo con iconos 192×192 y 512×512 en formato PNG
+Service Worker con estrategia cache-first para assets, network-first para API
+apple-mobile-web-app-capable, theme-color: #0077b6
+Banner de instalación inteligente en Home:
+iOS: instrucciones con ícono de Share → "Agregar a pantalla de inicio"
+Android: botón nativo beforeinstallprompt con UI branded
+Se muestra solo una vez, se puede cerrar, no aparece si ya está instalada
+EXPERIENCIA MÓVIL (max-width 430px)
+Layout tipo teléfono enmarcado en desktop: contenedor de 430px centrado con fondo gradiente oscuro exterior (#020b1a → #03045e), sombra de glow aqua: box-shadow: 0 0 80px rgba(0,119,182,0.4)
+Bottom nav fijo tipo Airbnb — siempre visible, altura 76px, fondo blanco opaco con blur, pill indicator animado con framer-motion layoutId que desliza entre tabs
+Page transitions suaves con framer-motion (fade + slide 14px)
+Sin emoji en la UI — usar react-icons/bs y react-icons/hi2
+height: 100dvh, scroll dentro del área de contenido, nav nunca scrollea
+PANTALLAS (15 páginas)
+HOME — estilo editorial Apple App Store
+Hero card: degradado cinemático completo, altura 320px, bordes 28px, burbujas decorativas, texto bold negro 900, botón glassmorphism CTA "Agendar lavado"
+Featured cards (servicios): scroll horizontal con scroll-snap-type: x mandatory, tarjetas 85vw, altura ~300px, cada una con degradado único, imagen en la mitad superior, info en la inferior — como las editorial cards del App Store de Apple
+Sección Sucursales: rows blancos con sombra suave, ícono aqua, nombre bold, rating con estrella dorada
+Banner instalación PWA: card glassmorphism con instrucciones para iOS y Android
+SERVICIOS
+Tarjetas verticales de ancho completo con degradado de fondo
+Imagen en la parte superior (180px alto)
+Badge precio top-right glassmorphism
+Botón "Reservar" glassmorphism alineado a la derecha
+BOOK (flujo multi-paso — 4 pasos)
+Paso 1: Elegir servicio — grid de tarjetas con degradado, precio, duración
+Paso 2: Elegir sucursal — mapa estático o lista con dirección y disponibilidad
+Paso 3: Elegir fecha y hora — calendario mes horizontal snap-scroll, chips de horarios disponibles (aqua cuando libre, gris cuando ocupado)
+Paso 4 (solo si autenticado): Confirmar y pagar — resumen visual premium con todos los detalles
+Barra de progreso animada en la parte superior (degradado aqua)
+El flujo de pasos 1-3 es 100% navegable sin login (para demo y exploración)
+Solo en paso 4 se solicita autenticación si no hay sesión activa
+LOGIN / REGISTRO
+Pantalla completa con el degradado cinemático de fondo (no dentro del layout del teléfono)
+Card blanca elevada con borderRadius: 28px, inputs sin borde con fondo gris claro, botón primario con degradado
+Burbujas de agua decorativas en el fondo
+Hint de credenciales demo visible
+BOOKINGS (historial del cliente)
+Tab "Próximas" / "Pasadas" con indicador deslizante
+Cards con mini badge de estado: "Confirmada" (aqua), "Completada" (verde), "Cancelada" (rojo)
+PERFIL
+Avatar con iniciales sobre degradado aqua
+Stats del usuario (total lavados, puntos, ahorro)
+Opciones de cuenta en lista
+PROVIDER HOME
+Dashboard del lavador con citas del día como timeline vertical
+ADMIN DASHBOARD
+Cards de métricas con degradados distintos por categoría
+Quick actions grid
+STACK TÉCNICO
+Frontend: React 18 + Vite + TypeScript
+Estilos: CSS-in-JS inline (no Tailwind para componentes críticos) + variables CSS globales
+Animaciones: Framer Motion — page transitions, card press, pill indicator del nav
+Routing: Wouter
+API: React Query con hooks generados por Orval desde OpenAPI
+Toasts: Sonner
+Backend: Express + PostgreSQL + Drizzle ORM
+Auth: cookie-session, SHA-256
+ROLES Y ACCESO
+Rol	Acceso
+Público	Home, Servicios, Sucursales, Book pasos 1-3
+Cliente	+ Mis citas, Perfil, paso 4 de Book
+Proveedor	+ Dashboard del día, Agenda
+Admin	+ Dashboard, gestión completa
+Nunca bloquear la navegación de exploración. Solo pedir login en acción de confirmación.
+
+DATOS SEED
+3 servicios: Lavado Básico ($120, 30min), Cam
