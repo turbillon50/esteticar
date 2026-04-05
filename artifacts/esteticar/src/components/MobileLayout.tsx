@@ -2,89 +2,161 @@ import React from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "./AuthProvider";
-import { BsHouseDoorFill, BsHouseDoor, BsCalendarCheckFill, BsCalendarCheck, BsPersonFill, BsPerson, BsClockFill, BsClock, BsListUl } from "react-icons/bs";
+import {
+  BsHouseDoorFill, BsHouseDoor,
+  BsCalendarCheckFill, BsCalendarCheck,
+  BsPersonFill, BsPerson,
+  BsClockFill, BsClock,
+  BsListUl,
+  BsGridFill, BsGrid,
+} from "react-icons/bs";
 import { HiOutlineWrenchScrewdriver, HiWrenchScrewdriver } from "react-icons/hi2";
+
+type NavLink = {
+  href: string;
+  label: string;
+  ActiveIcon: React.ComponentType<any>;
+  Icon: React.ComponentType<any>;
+};
+
+function getNavLinks(role?: string): NavLink[] {
+  if (role === "customer") return [
+    { href: "/", label: "Inicio", ActiveIcon: BsHouseDoorFill, Icon: BsHouseDoor },
+    { href: "/bookings", label: "Citas", ActiveIcon: BsCalendarCheckFill, Icon: BsCalendarCheck },
+    { href: "/profile", label: "Perfil", ActiveIcon: BsPersonFill, Icon: BsPerson },
+  ];
+  if (role === "provider") return [
+    { href: "/", label: "Hoy", ActiveIcon: BsClockFill, Icon: BsClock },
+    { href: "/schedule", label: "Agenda", ActiveIcon: BsCalendarCheckFill, Icon: BsCalendarCheck },
+    { href: "/profile", label: "Perfil", ActiveIcon: BsPersonFill, Icon: BsPerson },
+  ];
+  if (role === "admin") return [
+    { href: "/admin", label: "Inicio", ActiveIcon: BsGridFill, Icon: BsGrid },
+    { href: "/admin/bookings", label: "Reservas", ActiveIcon: BsCalendarCheckFill, Icon: BsCalendarCheck },
+    { href: "/admin/services", label: "Gestión", ActiveIcon: HiWrenchScrewdriver, Icon: HiOutlineWrenchScrewdriver },
+    { href: "/profile", label: "Perfil", ActiveIcon: BsPersonFill, Icon: BsPerson },
+  ];
+  return [
+    { href: "/", label: "Inicio", ActiveIcon: BsHouseDoorFill, Icon: BsHouseDoor },
+    { href: "/services", label: "Servicios", ActiveIcon: BsListUl, Icon: BsListUl },
+    { href: "/login", label: "Entrar", ActiveIcon: BsPersonFill, Icon: BsPerson },
+  ];
+}
+
+const HIDE_NAV = ["/login", "/register", "/book"];
 
 export function MobileLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const { user } = useAuth();
-  
-  // Exclude bottom nav on auth screens or booking flow screens
-  const showBottomNav = !location.startsWith('/login') && 
-                        !location.startsWith('/register') &&
-                        !location.startsWith('/book');
+
+  const showNav = !HIDE_NAV.some(r => location.startsWith(r));
+  const links = getNavLinks(user?.role);
 
   return (
-    <div className="min-h-[100dvh] w-full bg-gray-100 flex justify-center overflow-hidden">
-      {/* Mobile App Container */}
-      <div className="w-full max-w-[430px] bg-background min-h-[100dvh] shadow-2xl relative flex flex-col overflow-hidden">
-        
-        {/* Main Content Area - Scrollable */}
-        <div className="flex-1 overflow-y-auto w-full pb-[80px]">
-          <AnimatePresence mode="wait">
+    /* Outer shell — dark navy bg so it looks like a phone on desktop */
+    <div
+      className="flex justify-center items-stretch"
+      style={{
+        minHeight: "100dvh",
+        background: "linear-gradient(135deg, #050d1a 0%, #0a1628 100%)",
+      }}
+    >
+      {/* Phone container — true flex column, height is exactly viewport */}
+      <div
+        className="flex flex-col w-full"
+        style={{
+          maxWidth: 430,
+          height: "100dvh",
+          background: "#f5f6f8",
+          boxShadow: "0 0 80px rgba(0,0,0,0.6)",
+          position: "relative",
+        }}
+      >
+        {/* Scrollable content — flex-1 so it takes all space minus nav */}
+        <div
+          className="flex-1 overflow-y-auto overscroll-none"
+          style={{ WebkitOverflowScrolling: "touch" } as any}
+        >
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={location}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-              className="min-h-full"
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.18, ease: [0.25, 0.46, 0.45, 0.94] }}
             >
               {children}
             </motion.div>
           </AnimatePresence>
         </div>
 
-        {/* Bottom Navigation */}
-        {showBottomNav && <BottomNav role={user?.role} location={location} />}
+        {/* Bottom Nav — flex-shrink-0 so it's always visible */}
+        {showNav && <BottomNav links={links} location={location} />}
       </div>
     </div>
   );
 }
 
-function BottomNav({ role, location }: { role?: string; location: string }) {
-  let links = [];
-
-  if (role === "customer") {
-    links = [
-      { href: "/", label: "Inicio", icon: location === "/" ? BsHouseDoorFill : BsHouseDoor },
-      { href: "/bookings", label: "Citas", icon: location.startsWith("/bookings") ? BsCalendarCheckFill : BsCalendarCheck },
-      { href: "/profile", label: "Perfil", icon: location === "/profile" ? BsPersonFill : BsPerson },
-    ];
-  } else if (role === "provider") {
-    links = [
-      { href: "/", label: "Hoy", icon: location === "/" ? BsClockFill : BsClock },
-      { href: "/schedule", label: "Agenda", icon: location === "/schedule" ? BsCalendarCheckFill : BsCalendarCheck },
-      { href: "/history", label: "Historial", icon: location === "/history" ? BsListUl : BsListUl },
-    ];
-  } else if (role === "admin") {
-    links = [
-      { href: "/admin", label: "Dashboard", icon: location === "/admin" ? BsHouseDoorFill : BsHouseDoor },
-      { href: "/admin/bookings", label: "Reservas", icon: location === "/admin/bookings" ? BsCalendarCheckFill : BsCalendarCheck },
-      { href: "/admin/services", label: "Ajustes", icon: location.startsWith("/admin/services") ? HiWrenchScrewdriver : HiOutlineWrenchScrewdriver },
-    ];
-  } else {
-    // Public
-    links = [
-      { href: "/", label: "Inicio", icon: location === "/" ? BsHouseDoorFill : BsHouseDoor },
-      { href: "/services", label: "Servicios", icon: location === "/services" ? BsListUl : BsListUl },
-      { href: "/login", label: "Ingresar", icon: location === "/login" ? BsPersonFill : BsPerson },
-    ];
-  }
-
+function BottomNav({ links, location }: { links: NavLink[]; location: string }) {
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl border-t border-border z-50 px-6 py-2 pb-safe flex justify-between items-center h-[80px]">
-      {links.map((link) => {
-        const isActive = link.href === "/" ? location === "/" : location.startsWith(link.href);
-        const Icon = link.icon;
+    <div
+      className="flex-shrink-0 flex items-start justify-around px-2"
+      style={{
+        height: 76,
+        paddingTop: 10,
+        background: "rgba(255,255,255,0.98)",
+        backdropFilter: "blur(24px)",
+        WebkitBackdropFilter: "blur(24px)",
+        borderTop: "1px solid rgba(0,0,0,0.07)",
+        boxShadow: "0 -4px 24px rgba(10,22,40,0.09)",
+      }}
+    >
+      {links.map(({ href, label, ActiveIcon, Icon }) => {
+        const isActive = href === "/" ? location === "/" : location === href || location.startsWith(href + "/");
+        const NavIcon = isActive ? ActiveIcon : Icon;
+
         return (
-          <Link key={link.href} href={link.href} className="flex-1 flex flex-col items-center justify-center gap-1 tap-highlight-transparent">
-            <motion.div 
-              whileTap={{ scale: 0.9 }}
-              className={`flex flex-col items-center justify-center w-16 h-12 rounded-2xl ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
+          <Link
+            key={href}
+            href={href}
+            className="flex flex-col items-center gap-1 flex-1 select-none"
+          >
+            <motion.div
+              whileTap={{ scale: 0.82 }}
+              transition={{ type: "spring", stiffness: 500, damping: 25 }}
+              className="flex flex-col items-center gap-1"
             >
-              <Icon className="text-[24px]" />
-              <span className="text-[10px] font-medium mt-1">{link.label}</span>
+              {/* Icon with active pill */}
+              <div className="relative flex items-center justify-center" style={{ width: 44, height: 28 }}>
+                {isActive && (
+                  <motion.div
+                    layoutId="nav-active-pill"
+                    className="absolute inset-0 rounded-full"
+                    style={{ background: "#0A1628" }}
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+                <NavIcon
+                  className="relative z-10"
+                  style={{
+                    fontSize: 19,
+                    color: isActive ? "#00B4D8" : "#c4c9d4",
+                  }}
+                />
+              </div>
+
+              {/* Label */}
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: isActive ? 700 : 500,
+                  letterSpacing: "0.03em",
+                  color: isActive ? "#0A1628" : "#b0b8c8",
+                  lineHeight: 1,
+                }}
+              >
+                {label}
+              </span>
             </motion.div>
           </Link>
         );
