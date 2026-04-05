@@ -56,7 +56,25 @@ Premium mobile-first car wash booking app for the Mexican market.
 - Admin: admin@esteticar.mx / admin123
 - Provider: juan@esteticar.mx / washer123
 
+### Booking Flow (5 steps)
+- Step 0: Service selection
+- Step 1: Date — monthly calendar with prev/next nav, past days disabled
+- Step 2: Location — UnifiedMap (Google Maps or Leaflet) with GPS geolocation, sorts by Haversine distance, Esteticar custom branded pins
+- Step 3: Timeslot
+- Step 4: Confirm (auth gate)
+
+### Maps
+- `src/lib/esteticarPin.ts` — SVG teardrop pin generator (states: normal/selected/edit/new/deleting)
+- `src/components/UnifiedMap.tsx` — auto-switches Google Maps ↔ Leaflet based on `VITE_GOOGLE_MAPS_API_KEY`
+- To activate Google Maps: add `VITE_GOOGLE_MAPS_API_KEY=<your_key>` as environment secret
+
+### Admin Mode Creator (AdminLocations)
+- Map view with Mapa/Lista toggle
+- "Modo creador" FAB: tap on map → places pending pin → form slides up → saves with lat/lng
+- Tap existing pin → info panel → confirm delete
+
 ### Seed Data
-- 3 services: Lavado Básico ($120), Camioneta ($180), Detailing ($350)
-- 3 locations: Polanco, Santa Fe, Monterrey
-- Timeslots seeded for location 1 and 2 only (3 days)
+- 9 locations in Cuernavaca/Morelos with lat/lng coordinates
+- 3 services: Lavado Básico ($120), Camioneta ($180), Completo con Interiores ($800)
+- 14 days of timeslots for all 9 locations
+- Auto-seeds on startup if DB is empty (`autoSeed()` in api-server/src/seed.ts)

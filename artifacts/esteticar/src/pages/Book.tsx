@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
   useListServices,
@@ -19,7 +19,8 @@ import {
   BsChevronLeft, BsChevronRight, BsGeoAltFill,
   BsStarFill,
 } from "react-icons/bs";
-import "leaflet/dist/leaflet.css";
+import UnifiedMap from "@/components/UnifiedMap";
+import type { MapLocation } from "@/components/UnifiedMap";
 
 // ─── Step labels ────────────────────────────────────────────────────────────
 const STEPS = ["Servicio", "Fecha", "Sucursal", "Horario", "Confirmar"];
@@ -166,14 +167,17 @@ function GeoLocationPicker({
 }: { locations: any[]; selected: any; onSelect: (l: any) => void }) {
   const [userPos, setUserPos] = useState<[number, number] | null>(null);
   const [geoStatus, setGeoStatus] = useState<"pending" | "ok" | "denied">("pending");
-  const [mapReady, setMapReady] = useState(false);
-  const [MapContainer, setMapContainer] = useState<any>(null);
-  const [TileLayer, setTileLayer] = useState<any>(null);
-  const [Marker, setMarkerComp] = useState<any>(null);
-  const [Circle, setCircle] = useState<any>(null);
-  const [L, setL] = useState<any>(null);
 
-  // Sort locations by distance from user
+  useEffect(() => {
+    if (!navigator.geolocation) { setGeoStatus("denied"); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => { setUserPos([pos.coords.latitude, pos.coords.longitude]); setGeoStatus("ok"); },
+      () => { setGeoStatus("denied"); },
+      { timeout: 8000 }
+    );
+  }, []);
+
+  // Sort by distance
   const sorted = [...locations].map(loc => {
     const [lat, lng] = getLocCoords(loc);
     const dist = userPos ? haversineKm(userPos[0], userPos[1], lat, lng) : null;
@@ -184,155 +188,50 @@ function GeoLocationPicker({
     return a.dist - b.dist;
   });
 
-  useEffect(() => {
-    // Request geolocation
-    if (!navigator.geolocation) {
-      setGeoStatus("denied");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        setUserPos([pos.coords.latitude, pos.coords.longitude]);
-        setGeoStatus("ok");
-      },
-      () => {
-        setUserPos([18.9242, -99.2216]); // Default Cuernavaca
-        setGeoStatus("denied");
-      },
-      { timeout: 8000 }
-    );
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      const leaflet = await import("leaflet");
-      const rl = await import("react-leaflet");
-      const Lmod = leaflet.default ?? leaflet;
-      delete (Lmod.Icon.Default.prototype as any)._getIconUrl;
-      Lmod.Icon.Default.mergeOptions({
-        iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-        iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-      });
-      setL(Lmod);
-      setMapContainer(() => rl.MapContainer);
-      setTileLayer(() => rl.TileLayer);
-      setMarkerComp(() => rl.Marker);
-      setCircle(() => rl.Circle);
-      setMapReady(true);
-    })();
-  }, []);
-
-  const customPin = useCallback((loc: any) => {
-    if (!L) return null;
-    const isSel = selected?.id === loc.id;
-    return L.divIcon({
-      className: "",
-      html: `<div style="
-        width:${isSel ? 44 : 34}px;height:${isSel ? 44 : 34}px;
-        border-radius:50% 50% 50% 4px;
-        background:${isSel ? "linear-gradient(135deg,#00b4d8,#0077b6)" : "linear-gradient(135deg,#03045e,#0077b6)"};
-        border:${isSel ? "3px solid #48cae4" : "2px solid #fff"};
-        box-shadow:0 4px 16px rgba(3,4,94,${isSel ? "0.5" : "0.3"});
-        display:flex;align-items:center;justify-content:center;
-        transform:${isSel ? "scale(1.1)" : "scale(1)"};
-      "><svg width="14" height="14" viewBox="0 0 24 24" fill="white">
-        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-      </svg></div>`,
-      iconSize: [isSel ? 44 : 34, isSel ? 44 : 34],
-      iconAnchor: [isSel ? 22 : 17, isSel ? 44 : 34],
-    });
-  }, [L, selected]);
-
-  const userPin = useCallback(() => {
-    if (!L) return null;
-    return L.divIcon({
-      className: "",
-      html: `<div style="
-        width:20px;height:20px;border-radius:50%;
-        background:radial-gradient(circle,#00b4d8 30%,rgba(0,180,216,0.3) 70%);
-        border:3px solid #fff;
-        box-shadow:0 0 0 4px rgba(0,180,216,0.25), 0 2px 8px rgba(0,0,0,0.3);
-      "></div>`,
-      iconSize: [20, 20],
-      iconAnchor: [10, 10],
-    });
-  }, [L]);
+  // Build map locations with Esteticar pin states
+  const mapLocations: MapLocation[] = sorted.map(loc => {
+    const [lat, lng] = getLocCoords(loc);
+    return { id: loc.id, lat, lng, name: loc.name, state: selected?.id === loc.id ? "selected" : "normal" };
+  });
 
   const center: [number, number] = userPos ?? [18.9242, -99.2216];
+  const zoom = geoStatus === "ok" ? 13 : 11;
 
   return (
     <div>
-      {/* Geo status banner */}
+      {/* Status banner */}
       {geoStatus === "pending" && (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 10, padding: "12px 16px",
-          background: "rgba(0,119,182,0.08)", borderRadius: 14, marginBottom: 14,
-          border: "1px solid rgba(0,119,182,0.2)",
-        }}>
-          <div style={{ width: 16, height: 16, border: "2.5px solid #0077b6", borderTopColor: "transparent", borderRadius: "50%" }} className="animate-spin" />
+        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "rgba(0,119,182,0.08)", borderRadius: 14, marginBottom: 14, border: "1px solid rgba(0,119,182,0.2)" }}>
+          <div style={{ width: 16, height: 16, border: "2.5px solid #0077b6", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
           <p style={{ color: "#0077b6", fontSize: 13, fontWeight: 600 }}>Obteniendo tu ubicación...</p>
         </div>
       )}
       {geoStatus === "ok" && (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8, padding: "10px 14px",
-          background: "rgba(0,200,100,0.08)", borderRadius: 12, marginBottom: 14,
-          border: "1px solid rgba(0,200,100,0.2)",
-        }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(0,200,100,0.08)", borderRadius: 12, marginBottom: 14, border: "1px solid rgba(0,200,100,0.2)" }}>
           <BsGeoAltFill style={{ color: "#16a34a", fontSize: 14 }} />
-          <p style={{ color: "#16a34a", fontSize: 13, fontWeight: 700 }}>Ubicación detectada — autolavados ordenados por distancia</p>
+          <p style={{ color: "#16a34a", fontSize: 13, fontWeight: 700 }}>Ubicación detectada — autolavados del más cercano al más lejano</p>
         </div>
       )}
       {geoStatus === "denied" && (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 8, padding: "10px 14px",
-          background: "rgba(245,158,11,0.08)", borderRadius: 12, marginBottom: 14,
-          border: "1px solid rgba(245,158,11,0.2)",
-        }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(245,158,11,0.08)", borderRadius: 12, marginBottom: 14, border: "1px solid rgba(245,158,11,0.2)" }}>
           <BsGeoAlt style={{ color: "#d97706", fontSize: 14 }} />
           <p style={{ color: "#d97706", fontSize: 13, fontWeight: 700 }}>Mostrando todos los autolavados en Morelos</p>
         </div>
       )}
 
-      {/* Map */}
+      {/* Map with Esteticar branded pins */}
       <div style={{ borderRadius: 20, overflow: "hidden", boxShadow: "0 6px 24px rgba(3,4,94,0.15)", marginBottom: 16 }}>
-        {!mapReady || !MapContainer ? (
-          <div style={{ height: 240, background: "linear-gradient(135deg,#03045e,#0077b6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <div style={{ width: 24, height: 24, border: "3px solid #48cae4", borderTopColor: "transparent", borderRadius: "50%" }} className="animate-spin" />
-          </div>
-        ) : (
-          <MapContainer
-            key={`${center[0]}-${center[1]}`}
-            center={center}
-            zoom={geoStatus === "ok" ? 13 : 11}
-            style={{ height: 240, width: "100%" }}
-            zoomControl={false}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            {/* User location dot */}
-            {userPos && userPin() && (
-              <Marker position={userPos} icon={userPin()} />
-            )}
-            {/* Location pins */}
-            {sorted.map(loc => {
-              const coords = getLocCoords(loc);
-              const icon = customPin(loc);
-              if (!icon) return null;
-              return (
-                <Marker
-                  key={loc.id}
-                  position={coords}
-                  icon={icon}
-                  eventHandlers={{ click: () => onSelect(loc) }}
-                />
-              );
-            })}
-          </MapContainer>
-        )}
+        <UnifiedMap
+          center={center}
+          zoom={zoom}
+          height={240}
+          locations={mapLocations}
+          userPosition={userPos}
+          onMarkerClick={mapLoc => {
+            const loc = sorted.find(l => l.id === mapLoc.id);
+            if (loc) onSelect(loc);
+          }}
+        />
       </div>
 
       {/* Location list sorted by distance */}
@@ -345,8 +244,7 @@ function GeoLocationPicker({
               whileTap={{ scale: 0.97 }}
               onClick={() => onSelect(loc)}
               style={{
-                display: "flex", alignItems: "center", gap: 0,
-                borderRadius: 18, overflow: "hidden", cursor: "pointer",
+                display: "flex", alignItems: "center", borderRadius: 18, overflow: "hidden", cursor: "pointer",
                 background: isSel ? "linear-gradient(135deg,#03045e,#0077b6)" : "#fff",
                 boxShadow: isSel ? "0 6px 24px rgba(3,4,94,0.3)" : "0 2px 10px rgba(3,4,94,0.07)",
                 border: isSel ? "2px solid rgba(72,202,228,0.4)" : "2px solid transparent",
@@ -354,15 +252,8 @@ function GeoLocationPicker({
               }}
             >
               {/* Rank / distance badge */}
-              <div style={{
-                width: 56, flexShrink: 0,
-                background: isSel ? "rgba(0,180,216,0.2)" : "#f0f4f8",
-                alignSelf: "stretch",
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
-              }}>
-                <span style={{ fontSize: 16, fontWeight: 900, color: isSel ? "#48cae4" : "#0077b6" }}>
-                  {i + 1}
-                </span>
+              <div style={{ width: 56, flexShrink: 0, background: isSel ? "rgba(0,180,216,0.2)" : "#f0f4f8", alignSelf: "stretch", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2 }}>
+                <span style={{ fontSize: 16, fontWeight: 900, color: isSel ? "#48cae4" : "#0077b6" }}>{i + 1}</span>
                 {loc.dist !== null && (
                   <span style={{ fontSize: 9, fontWeight: 800, color: isSel ? "rgba(72,202,228,0.7)" : "#90a0b7", textAlign: "center", lineHeight: 1.2 }}>
                     {loc.dist < 1 ? `${Math.round(loc.dist * 1000)}m` : `${loc.dist.toFixed(1)}km`}
@@ -372,18 +263,12 @@ function GeoLocationPicker({
 
               {/* Info */}
               <div style={{ flex: 1, padding: "12px 14px" }}>
-                <p style={{ fontWeight: 900, fontSize: 14, marginBottom: 2, color: isSel ? "#fff" : "#03045e" }}>
-                  {loc.name}
-                </p>
-                <p style={{ fontSize: 11, color: isSel ? "rgba(255,255,255,0.6)" : "#90a0b7", marginBottom: 4 }}>
-                  {loc.address}
-                </p>
+                <p style={{ fontWeight: 900, fontSize: 14, marginBottom: 2, color: isSel ? "#fff" : "#03045e" }}>{loc.name}</p>
+                <p style={{ fontSize: 11, color: isSel ? "rgba(255,255,255,0.6)" : "#90a0b7", marginBottom: 4 }}>{loc.address}</p>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                     <BsClock style={{ color: isSel ? "#48cae4" : "#0077b6", fontSize: 10 }} />
-                    <span style={{ fontSize: 11, fontWeight: 700, color: isSel ? "#48cae4" : "#0077b6" }}>
-                      {loc.openTime} – {loc.closeTime}
-                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: isSel ? "#48cae4" : "#0077b6" }}>{loc.openTime} – {loc.closeTime}</span>
                   </div>
                   <div style={{ display: "flex", gap: 1 }}>
                     {[1,2,3,4].map(s => <BsStarFill key={s} style={{ color: "#f59e0b", fontSize: 9 }} />)}
@@ -392,14 +277,13 @@ function GeoLocationPicker({
               </div>
 
               <div style={{ paddingRight: 14 }}>
-                {isSel
-                  ? <BsCheckCircleFill style={{ color: "#48cae4", fontSize: 18 }} />
-                  : <BsArrowRight style={{ color: "#c0ccd8", fontSize: 13 }} />}
+                {isSel ? <BsCheckCircleFill style={{ color: "#48cae4", fontSize: 18 }} /> : <BsArrowRight style={{ color: "#c0ccd8", fontSize: 13 }} />}
               </div>
             </motion.button>
           );
         })}
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
