@@ -1,6 +1,6 @@
 "use client";
 
-import { amountOf, cajaSplit, mxn, ofDay, PAY_LABEL } from "@/lib/ops";
+import { amountOf, cajaSplit, mxn, ofDay, PAY_LABEL, statusLabel } from "@/lib/ops";
 import { OpsHead } from "@/components/ops/OpsHead";
 import { useEsteticar } from "@/lib/store";
 
@@ -46,29 +46,29 @@ export default function AdminCajaPage() {
           </div>
         </div>
 
-        <div className="ops-table mt-6">
-          <div className="ops-tr ops-th">
-            <span>Folio</span>
-            <span>Cliente</span>
-            <span>Sucursal</span>
-            <span>Vía</span>
-            <span className="text-right">Importe</span>
-          </div>
+        <div className="mt-6 grid gap-3">
           {today.map((b) => {
             const loc = locations.find((l) => l.id === b.locationId);
             return (
-              <div key={b.id} className="ops-tr">
-                <span className="font-extrabold text-[var(--accent)]">{b.folio}</span>
-                <span>
-                  {b.customerName}
-                  <i className="block text-[11px] not-italic text-[var(--fg-muted)]">
-                    {b.time} · {b.status}
-                  </i>
-                </span>
-                <span>{loc?.name}</span>
-                <span>{PAY_LABEL[b.payment]}</span>
-                <span className="num text-right font-extrabold">{mxn(amountOf(b, services))}</span>
-              </div>
+              <article key={b.id} className="ops-ticket">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-extrabold tracking-[0.12em] text-[var(--accent)]">
+                      {b.folio}
+                    </p>
+                    <p className="mt-0.5 font-extrabold text-[var(--fg)]">{b.customerName}</p>
+                    <p className="mt-1 text-[12px] font-semibold text-[var(--fg-muted)]">
+                      {loc?.name} · {b.time} · {PAY_LABEL[b.payment]}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="num text-[18px] font-extrabold text-[var(--fg)]">
+                      {mxn(amountOf(b, services))}
+                    </p>
+                    <span className="ops-chip info mt-1">{statusLabel(b.status)}</span>
+                  </div>
+                </div>
+              </article>
             );
           })}
         </div>

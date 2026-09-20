@@ -1,4 +1,4 @@
-import { isoDay, slotsForLocation } from "./seed";
+import { isoDay } from "./seed";
 import type { Booking, Location, PaymentMethod, Service, Staff } from "./types";
 
 export function mxn(n: number) {
@@ -43,8 +43,8 @@ export function occupancy(loc: Location, bookings: Booking[], day = 0) {
   const taken = bookings.filter(
     (b) => b.locationId === loc.id && b.date === iso && b.status !== "cancelada",
   ).length;
-  const slots = Math.max(1, slotsForLocation(loc).length);
-  return { taken, slots, pct: Math.min(100, Math.round((taken / slots) * 100)) };
+  const cap = 8;
+  return { taken, slots: cap, pct: Math.min(100, Math.round((taken / cap) * 100)) };
 }
 
 export function cajaSplit(bookings: Booking[], services: Service[]) {
