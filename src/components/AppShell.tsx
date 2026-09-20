@@ -21,8 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const hideMobile = HIDE_MOBILE.some((p) => pathname.startsWith(p));
   const [ready, setReady] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [splash, setSplash] = useState(!isOps);
-  const setRole = useEsteticar((s) => s.setRole);
+  const [splash, setSplash] = useState(true);
 
   useEffect(() => {
     const unsub = useEsteticar.persist.onFinishHydration(() => setReady(true));
@@ -36,11 +35,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMenuOpen(false);
-    if (isOps) {
-      setRole("admin");
-      setSplash(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isOps) return;
+    setSplash(false);
+    if (useEsteticar.getState().role !== "admin") {
+      useEsteticar.getState().setRole("admin");
     }
-  }, [pathname, isOps, setRole]);
+  }, [isOps]);
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -52,7 +55,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={`app ${isOps ? "is-ops" : ""}`}>
-      {splash ? <Splash onDone={endSplash} /> : null}
+      {splash && !isOps ? <Splash onDone={endSplash} /> : null}
       {isOps ? <AdminRail /> : <DesktopRail />}
       <div className="stage">
         {isOps ? (
