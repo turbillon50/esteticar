@@ -1,45 +1,64 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { BottomNav } from "./BottomNav";
 import { useEsteticar } from "@/lib/store";
+import { Splash } from "./Splash";
+import { TopBar } from "./TopBar";
+import { SideMenu } from "./SideMenu";
+import { TabBar } from "./TabBar";
+import { DesktopRail } from "./DesktopRail";
 
-const HIDE_NAV = ["/agenda", "/confirmacion"];
+const HIDE_MOBILE = ["/agenda", "/confirmacion"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const showNav = !HIDE_NAV.some((p) => pathname.startsWith(p));
+  const hideMobile = HIDE_MOBILE.some((p) => pathname.startsWith(p));
   const [ready, setReady] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [splash, setSplash] = useState(true);
 
   useEffect(() => {
     const unsub = useEsteticar.persist.onFinishHydration(() => setReady(true));
     if (useEsteticar.persist.hasHydrated()) setReady(true);
-    return unsub;
+    const t = window.setTimeout(() => setReady(true), 600);
+    return () => {
+      unsub();
+      clearTimeout(t);
+    };
   }, []);
 
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
+
+  const endSplash = useCallback(() => setSplash(false), []);
+
   return (
-    <div
-      className="flex min-h-dvh justify-center"
-      style={{
-        background: "linear-gradient(160deg,#020b1a 0%,#03045e 50%,#0077b6 100%)",
-      }}
-    >
-      <div
-        className="relative flex w-full max-w-[430px] flex-col"
-        style={{
-          minHeight: "100dvh",
-          background: "#f0f4f8",
-          boxShadow: "0 0 80px rgba(0,119,182,0.35), 0 0 40px rgba(0,0,0,0.5)",
-        }}
-      >
-        <div
-          className="flex-1 overflow-y-auto overscroll-none"
-          style={{ WebkitOverflowScrolling: "touch" }}
-        >
-          {ready ? children : <div className="p-10 text-center text-sm font-bold text-[#0077b6]">Cargando Esteticar…</div>}
+    <div className="app">
+      {splash ? <Splash onDone={endSplash} /> : null}
+      <DesktopRail />
+      <div className="stage">
+        {!hideMobile ? (
+          <TopBar open={menuOpen} onToggle={() => setMenuOpen((v) => !v)} />
+        ) : null}
+        <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+        <div className="stage-body">
+          {ready ? (
+            children
+          ) : (
+            <div className="p-10 text-center text-sm font-bold text-[var(--accent)]">
+              Cargando Esteticar…
+            </div>
+          )}
         </div>
-        {showNav && ready ? <BottomNav /> : null}
+        {!hideMobile && ready ? <TabBar /> : null}
       </div>
     </div>
   );

@@ -64,11 +64,8 @@ function Calendar({
   const min = todayISO();
 
   return (
-    <div className="overflow-hidden rounded-[22px] bg-white shadow-[0_4px_20px_rgba(3,4,94,0.10)]">
-      <div
-        className="flex items-center justify-between px-5 py-4"
-        style={{ background: "linear-gradient(135deg,#03045e,#0077b6)" }}
-      >
+    <div className="card overflow-hidden">
+      <div className="flex items-center justify-between bg-[var(--navy)] px-5 py-4">
         <button
           type="button"
           onClick={() => {
@@ -101,7 +98,7 @@ function Calendar({
         {DAYS.map((d) => (
           <div
             key={d}
-            className="text-center text-[10px] font-extrabold uppercase tracking-wide text-[#90a0b7]"
+            className="text-center text-[10px] font-extrabold uppercase tracking-wide text-[var(--fg-subtle)]"
           >
             {d}
           </div>
@@ -122,9 +119,8 @@ function Calendar({
               className="aspect-square rounded-full text-[13px]"
               style={{
                 fontWeight: on ? 800 : 600,
-                background: on ? "linear-gradient(135deg,#0077b6,#00b4d8)" : "transparent",
-                color: on ? "#fff" : past ? "#d1d5db" : "#03045e",
-                boxShadow: on ? "0 3px 12px rgba(0,119,182,0.35)" : "none",
+                background: on ? "var(--accent)" : "transparent",
+                color: on ? "#fff" : past ? "#d1d5db" : "var(--fg)",
               }}
             >
               {day}
@@ -186,303 +182,279 @@ export default function AgendaPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#f0f4f8]">
-      <header
-        className="relative overflow-hidden px-5 pb-5 pt-12"
-        style={{ background: "linear-gradient(150deg,#020b1a 0%,#03045e 50%,#0077b6 100%)" }}
-      >
-        <div className="mb-5 flex items-center gap-3.5">
-          <button
-            type="button"
-            onClick={() => (step > 0 ? setStep(step - 1) : router.push("/"))}
-            className="grid h-10 w-10 place-items-center rounded-full border border-white/20 bg-white/12 text-white"
-            aria-label="Regresar"
-          >
-            <ArrowLeft size={16} />
-          </button>
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#48cae4]/80">
-              Paso {step + 1} de {STEPS.length}
-            </p>
-            <p className="text-xl font-extrabold leading-none text-white">{STEPS[step]}</p>
-          </div>
-        </div>
-        <div className="h-1 overflow-hidden rounded bg-white/15">
-          <div
-            className="h-full rounded"
-            style={{
-              width: `${progress}%`,
-              background: "linear-gradient(90deg,#48cae4,#00b4d8)",
-            }}
-          />
-        </div>
-      </header>
-
-      <div className="flex-1 px-4 py-5">
-        {step === 0 && (
-          <div className="flex flex-col gap-3.5">
-            <p className="text-[13px] font-semibold text-[#90a0b7]">Elige el tipo de lavado</p>
-            {services.map((s) => {
-              const on = serviceId === s.id;
-              return (
-                <button
-                  key={s.id}
-                  type="button"
-                  data-testid={`pick-service-${s.id}`}
-                  onClick={() => {
-                    setServiceId(s.id);
-                    setStep(1);
-                  }}
-                  className="flex overflow-hidden rounded-[22px] text-left"
-                  style={{
-                    background: on
-                      ? "linear-gradient(145deg,#03045e,#0077b6,#00b4d8)"
-                      : "#fff",
-                    boxShadow: on
-                      ? "0 8px 28px rgba(3,4,94,0.25)"
-                      : "0 2px 12px rgba(3,4,94,0.08)",
-                  }}
-                >
-                  <img src={s.image} alt="" className="h-[90px] w-[90px] object-cover" />
-                  <div className="flex flex-1 items-center justify-between px-4">
-                    <div>
-                      <p
-                        className="text-[15px] font-extrabold"
-                        style={{ color: on ? "#fff" : "#03045e" }}
-                      >
-                        {s.name}
-                      </p>
-                      <p className="mt-1 text-[17px] font-extrabold text-[#00b4d8]">
-                        ${s.price.toLocaleString("es-MX")}
-                        <span className="ml-2 text-xs font-semibold opacity-70">
-                          {s.durationMinutes} min
-                        </span>
-                      </p>
-                    </div>
-                    <ArrowRight size={14} className="text-[#c0ccd8]" />
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {step === 1 && (
-          <div>
-            <p className="mb-3.5 text-[13px] font-semibold text-[#90a0b7]">
-              ¿Qué día te lo lavamos?
-            </p>
-            <Calendar
-              selected={date}
-              onSelect={(d) => {
-                setDate(d);
-                setTime(null);
-                setStep(2);
-              }}
-            />
-          </div>
-        )}
-
-        {step === 2 && (
-          <div>
-            {originInfo.notice ? (
-              <div
-                className="mb-3.5 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-3"
-                data-testid="geo-notice"
-              >
-                <Navigation size={14} className="mt-0.5 shrink-0 text-amber-600" />
-                <p className="text-[13px] font-bold leading-snug text-amber-800">
-                  {originInfo.notice}
-                </p>
-              </div>
-            ) : (
-              <p className="mb-3.5 text-[13px] font-semibold text-[#90a0b7]">
-                Ordenadas por tiempo de traslado, no por kilómetros.
-              </p>
-            )}
-            <DynamicMap
-              locations={locations}
-              origin={originInfo.origin}
-              selectedId={locationId}
-              onSelect={setLocationId}
-            />
-            <div className="mt-3.5 flex flex-col gap-2.5">
-              {ranked.map((loc, i) => {
-                const on = locationId === loc.id;
-                return (
-                  <button
-                    key={loc.id}
-                    type="button"
-                    data-testid={`pick-branch-${loc.id}`}
-                    onClick={() => {
-                      setLocationId(loc.id);
-                      setTime(null);
-                      setStep(3);
-                    }}
-                    className="flex overflow-hidden rounded-[18px] text-left"
-                    style={{
-                      background: on
-                        ? "linear-gradient(135deg,#03045e,#0077b6)"
-                        : "#fff",
-                      boxShadow: "0 2px 10px rgba(3,4,94,0.07)",
-                    }}
-                  >
-                    <div
-                      className="flex w-14 shrink-0 flex-col items-center justify-center"
-                      style={{ background: on ? "rgba(0,180,216,0.2)" : "#f0f4f8" }}
-                    >
-                      <span
-                        className="text-base font-extrabold"
-                        style={{ color: on ? "#48cae4" : "#0077b6" }}
-                      >
-                        {i + 1}
-                      </span>
-                      <span
-                        className="px-1 text-center text-[9px] font-extrabold"
-                        style={{ color: on ? "#48cae4" : "#0077b6" }}
-                      >
-                        {loc.eta}
-                      </span>
-                    </div>
-                    <div className="flex-1 px-3.5 py-3">
-                      <p
-                        className="text-sm font-extrabold"
-                        style={{ color: on ? "#fff" : "#03045e" }}
-                      >
-                        {loc.name}
-                      </p>
-                      <p
-                        className="text-[11px]"
-                        style={{ color: on ? "rgba(255,255,255,0.6)" : "#90a0b7" }}
-                      >
-                        {loc.city} · {loc.openTime}–{loc.closeTime}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {step === 3 && location && (
-          <div>
-            <p className="mb-3.5 text-[13px] font-semibold text-[#90a0b7]">
-              Horarios en {location.name}
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {slots.map((h) => {
-                const on = time === h;
-                return (
-                  <button
-                    key={h}
-                    type="button"
-                    data-testid={`pick-slot-${h}`}
-                    onClick={() => {
-                      setTime(h);
-                      setStep(4);
-                    }}
-                    className="h-12 rounded-2xl text-sm font-extrabold"
-                    style={{
-                      background: on
-                        ? "linear-gradient(135deg,#0077b6,#00b4d8)"
-                        : "#fff",
-                      color: on ? "#fff" : "#03045e",
-                      boxShadow: "0 2px 8px rgba(3,4,94,0.08)",
-                    }}
-                  >
-                    {h}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {step === 4 && service && location && date && time && (
-          <div className="flex flex-col gap-3">
-            <div className="rounded-[22px] bg-white p-4 shadow-[0_4px_20px_rgba(3,4,94,0.08)]">
-              <p className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0077b6]">
-                Resumen
-              </p>
-              <ul className="space-y-2 text-sm font-semibold text-[#03045e]">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 size={14} className="text-[#00b4d8]" /> {service.name}
-                </li>
-                <li className="flex items-center gap-2">
-                  <Clock size={14} className="text-[#00b4d8]" /> {date} · {time}
-                </li>
-                <li className="flex items-center gap-2">
-                  <MapPin size={14} className="text-[#00b4d8]" /> {location.name}
-                </li>
-              </ul>
-              <p className="mt-4 text-3xl font-extrabold text-[#03045e]">
-                ${service.price.toLocaleString("es-MX")}
-                <span className="ml-2 text-xs font-bold text-[#90a0b7]">IVA incluido</span>
-              </p>
-            </div>
-
-            <p className="mt-1 text-[13px] font-semibold text-[#90a0b7]">
-              Pago por adelantado
-            </p>
-            {(
-              [
-                ["tarjeta", "Tarjeta", CreditCard],
-                ["transferencia", "Transferencia", Landmark],
-                ["oxxo", "OXXO", Store],
-              ] as const
-            ).map(([id, label, Icon]) => (
-              <button
-                key={id}
-                type="button"
-                data-testid={`pay-${id}`}
-                onClick={() => setPayment(id)}
-                className="flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left"
-                style={{
-                  background:
-                    payment === id
-                      ? "linear-gradient(135deg,#03045e,#0077b6)"
-                      : "#fff",
-                  color: payment === id ? "#fff" : "#03045e",
-                }}
-              >
-                <Icon size={18} />
-                <span className="font-extrabold">{label}</span>
-              </button>
-            ))}
-
-            {payment === "tarjeta" && (
-              <input
-                value={card}
-                onChange={(e) => setCard(e.target.value)}
-                className="h-12 rounded-2xl bg-white px-4 text-sm font-semibold outline-none"
-                placeholder="Número de tarjeta (demo)"
-                inputMode="numeric"
-              />
-            )}
-            {payment === "transferencia" && (
-              <p className="rounded-2xl bg-white px-4 py-3 text-[13px] font-semibold text-[#03045e]">
-                CLABE demo 012 180 001234567890. Se confirma al instante en esta demo.
-              </p>
-            )}
-            {payment === "oxxo" && (
-              <p className="rounded-2xl bg-white px-4 py-3 text-[13px] font-semibold text-[#03045e]">
-                Te damos un código OXXO al confirmar. En esta demo se marca pagado de inmediato.
-              </p>
-            )}
-
+    <div className="flex min-h-full flex-col bg-[var(--bg)]">
+      <div className="wizard-grid flex-1">
+        <header className="wizard-head">
+          <div className="mb-5 flex items-center gap-3.5">
             <button
               type="button"
-              data-testid="confirm-pay"
-              disabled={busy}
-              onClick={pay}
-              className="mt-2 flex h-14 items-center justify-center rounded-[18px] text-[15px] font-extrabold text-white disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg,#0077b6,#00b4d8)" }}
+              onClick={() => (step > 0 ? setStep(step - 1) : router.push("/"))}
+              className="icon-btn"
+              aria-label="Regresar"
             >
-              {busy ? "Procesando…" : "Pagar y confirmar"}
+              <ArrowLeft size={16} />
             </button>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#b8ecf6]/80">
+                Paso {step + 1} de {STEPS.length}
+              </p>
+              <p className="display text-[32px] leading-none text-white">{STEPS[step]}</p>
+            </div>
           </div>
-        )}
+          <div className="h-1 overflow-hidden rounded bg-white/15">
+            <div
+              className="h-full rounded bg-[#2ec4e0]"
+              style={{ width: `${progress}%`, transition: "width 250ms cubic-bezier(0.22,1,0.36,1)" }}
+            />
+          </div>
+          <ol className="mt-6 hidden flex-col gap-2 lg:flex">
+            {STEPS.map((label, i) => (
+              <li
+                key={label}
+                className="text-[13px] font-bold"
+                style={{ color: i === step ? "#b8ecf6" : "rgba(255,255,255,0.45)" }}
+              >
+                {String(i + 1).padStart(2, "0")}  {label}
+              </li>
+            ))}
+          </ol>
+        </header>
+
+        <div className="px-4 py-5 lg:px-10 lg:py-8">
+          {step === 0 && (
+            <div className="flex flex-col gap-3.5">
+              <p className="text-[13px] font-semibold text-[var(--fg-muted)]">Elige el tipo de lavado</p>
+              {services.map((s) => {
+                const on = serviceId === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    data-testid={`pick-service-${s.id}`}
+                    onClick={() => {
+                      setServiceId(s.id);
+                      setStep(1);
+                    }}
+                    className="press flex overflow-hidden rounded-[22px] text-left"
+                    style={{
+                      background: on ? "var(--navy)" : "#fff",
+                      border: on ? "1px solid transparent" : "1px solid var(--border)",
+                    }}
+                  >
+                    <img src={s.image} alt="" className="h-[90px] w-[90px] object-cover" />
+                    <div className="flex flex-1 items-center justify-between px-4">
+                      <div>
+                        <p className="text-[15px] font-extrabold" style={{ color: on ? "#fff" : "var(--fg)" }}>
+                          {s.name}
+                        </p>
+                        <p className="mt-1 text-[17px] font-extrabold text-[var(--accent-2)]">
+                          ${s.price.toLocaleString("es-MX")}
+                          <span className="ml-2 text-xs font-semibold opacity-70">{s.durationMinutes} min</span>
+                        </p>
+                      </div>
+                      <ArrowRight size={14} className="text-[#c0ccd8]" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {step === 1 && (
+            <div>
+              <p className="mb-3.5 text-[13px] font-semibold text-[var(--fg-muted)]">
+                ¿Qué día te lo lavamos?
+              </p>
+              <Calendar
+                selected={date}
+                onSelect={(d) => {
+                  setDate(d);
+                  setTime(null);
+                  setStep(2);
+                }}
+              />
+            </div>
+          )}
+
+          {step === 2 && (
+            <div>
+              {originInfo.notice ? (
+                <div
+                  className="mb-3.5 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-3"
+                  data-testid="geo-notice"
+                >
+                  <Navigation size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                  <p className="text-[13px] font-bold leading-snug text-amber-800">{originInfo.notice}</p>
+                </div>
+              ) : (
+                <p className="mb-3.5 text-[13px] font-semibold text-[var(--fg-muted)]">
+                  Ordenadas por tiempo de traslado, no por kilómetros.
+                </p>
+              )}
+              <DynamicMap
+                locations={locations}
+                origin={originInfo.origin}
+                selectedId={locationId}
+                onSelect={setLocationId}
+                height={280}
+              />
+              <div className="mt-3.5 flex flex-col gap-2.5">
+                {ranked.map((loc, i) => {
+                  const on = locationId === loc.id;
+                  return (
+                    <button
+                      key={loc.id}
+                      type="button"
+                      data-testid={`pick-branch-${loc.id}`}
+                      onClick={() => {
+                        setLocationId(loc.id);
+                        setTime(null);
+                        setStep(3);
+                      }}
+                      className="press flex overflow-hidden rounded-[18px] text-left"
+                      style={{
+                        background: on ? "var(--navy)" : "#fff",
+                        border: on ? "1px solid transparent" : "1px solid var(--border)",
+                      }}
+                    >
+                      <div
+                        className="flex w-14 shrink-0 flex-col items-center justify-center"
+                        style={{ background: on ? "rgba(46,196,224,0.12)" : "var(--bg)" }}
+                      >
+                        <span className="text-base font-extrabold" style={{ color: on ? "#2ec4e0" : "var(--accent)" }}>
+                          {i + 1}
+                        </span>
+                        <span className="px-1 text-center text-[9px] font-extrabold" style={{ color: on ? "#b8ecf6" : "var(--accent)" }}>
+                          {loc.eta}
+                        </span>
+                      </div>
+                      <div className="flex-1 px-3.5 py-3">
+                        <p className="text-sm font-extrabold" style={{ color: on ? "#fff" : "var(--fg)" }}>
+                          {loc.name}
+                        </p>
+                        <p className="text-[11px]" style={{ color: on ? "rgba(255,255,255,0.6)" : "var(--fg-muted)" }}>
+                          {loc.city} · {loc.openTime}–{loc.closeTime}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {step === 3 && location && (
+            <div>
+              <p className="mb-3.5 text-[13px] font-semibold text-[var(--fg-muted)]">
+                Horarios en {location.name}
+              </p>
+              <div className="grid grid-cols-3 gap-2 md:grid-cols-4">
+                {slots.map((h) => {
+                  const on = time === h;
+                  return (
+                    <button
+                      key={h}
+                      type="button"
+                      data-testid={`pick-slot-${h}`}
+                      onClick={() => {
+                        setTime(h);
+                        setStep(4);
+                      }}
+                      className="h-12 rounded-2xl text-sm font-extrabold"
+                      style={{
+                        background: on ? "var(--accent)" : "#fff",
+                        color: on ? "#fff" : "var(--fg)",
+                        border: on ? "1px solid transparent" : "1px solid var(--border)",
+                      }}
+                    >
+                      {h}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {step === 4 && service && location && date && time && (
+            <div className="flex flex-col gap-3">
+              <div className="card p-4">
+                <p className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[var(--accent)]">
+                  Resumen
+                </p>
+                <ul className="space-y-2 text-sm font-semibold text-[var(--fg)]">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 size={14} className="text-[var(--accent-2)]" /> {service.name}
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Clock size={14} className="text-[var(--accent-2)]" /> {date} · {time}
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <MapPin size={14} className="text-[var(--accent-2)]" /> {location.name}
+                  </li>
+                </ul>
+                <p className="mt-4 text-3xl font-extrabold text-[var(--fg)]">
+                  ${service.price.toLocaleString("es-MX")}
+                  <span className="ml-2 text-xs font-bold text-[var(--fg-muted)]">IVA incluido</span>
+                </p>
+              </div>
+
+              <p className="mt-1 text-[13px] font-semibold text-[var(--fg-muted)]">Pago por adelantado</p>
+              {(
+                [
+                  ["tarjeta", "Tarjeta", CreditCard],
+                  ["transferencia", "Transferencia", Landmark],
+                  ["oxxo", "OXXO", Store],
+                ] as const
+              ).map(([id, label, Icon]) => (
+                <button
+                  key={id}
+                  type="button"
+                  data-testid={`pay-${id}`}
+                  onClick={() => setPayment(id)}
+                  className="press flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left"
+                  style={{
+                    background: payment === id ? "var(--navy)" : "#fff",
+                    color: payment === id ? "#fff" : "var(--fg)",
+                    border: payment === id ? "1px solid transparent" : "1px solid var(--border)",
+                  }}
+                >
+                  <Icon size={18} />
+                  <span className="font-extrabold">{label}</span>
+                </button>
+              ))}
+
+              {payment === "tarjeta" && (
+                <input
+                  value={card}
+                  onChange={(e) => setCard(e.target.value)}
+                  className="h-12 rounded-2xl border border-[var(--border)] bg-white px-4 text-sm font-semibold outline-none"
+                  placeholder="Número de tarjeta (demo)"
+                  inputMode="numeric"
+                />
+              )}
+              {payment === "transferencia" && (
+                <p className="card px-4 py-3 text-[13px] font-semibold text-[var(--fg)]">
+                  CLABE demo 012 180 001234567890. Se confirma al instante en esta demo.
+                </p>
+              )}
+              {payment === "oxxo" && (
+                <p className="card px-4 py-3 text-[13px] font-semibold text-[var(--fg)]">
+                  Te damos un código OXXO al confirmar. En esta demo se marca pagado de inmediato.
+                </p>
+              )}
+
+              <button
+                type="button"
+                data-testid="confirm-pay"
+                disabled={busy}
+                onClick={pay}
+                className="cta mt-2 justify-center text-[15px] disabled:opacity-60"
+              >
+                {busy ? "Procesando…" : "Pagar y confirmar"}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

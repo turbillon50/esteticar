@@ -10,17 +10,18 @@ export default function AdminPage() {
   const locations = useEsteticar((s) => s.locations);
 
   return (
-    <div className="min-h-full bg-[#f0f4f8] pb-8">
-      <header
-        className="px-5 pb-8 pt-14 text-white"
-        style={{ background: "linear-gradient(150deg,#020b1a,#03045e,#0077b6)" }}
-      >
-        <p className="text-sm text-white/60">Modo admin</p>
-        <h1 className="text-3xl font-extrabold">Esteticar</h1>
-        <p className="text-sm text-white/70">Panel de Sergio Zapata · Cuernavaca</p>
+    <div className="min-h-full bg-[var(--bg)] pb-8">
+      <header className="hero-light px-6 pb-8 pt-8 text-white">
+        <div className="mx-auto max-w-[1120px]">
+          <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#b8ecf6]">
+            Administración
+          </p>
+          <h1 className="display text-[40px]">Panel</h1>
+          <p className="text-sm text-white/70">Sergio Zapata · Cuernavaca</p>
+        </div>
       </header>
 
-      <div className="grid grid-cols-2 gap-3 px-4 py-5">
+      <div className="page grid grid-cols-2 gap-3 pt-6 md:grid-cols-4">
         {[
           { label: "Citas", value: bookings.length },
           { label: "Sucursales", value: locations.length },
@@ -30,40 +31,31 @@ export default function AdminPage() {
             value: bookings.filter((b) => b.status === "pendiente").length,
           },
         ].map((c) => (
-          <div key={c.label} className="rounded-3xl bg-white p-4">
-            <p className="text-3xl font-extrabold text-[#03045e]">{c.value}</p>
-            <p className="text-xs font-semibold text-[#90a0b7]">{c.label}</p>
+          <div key={c.label} className="card p-4">
+            <p className="text-3xl font-extrabold text-[var(--fg)]">{c.value}</p>
+            <p className="text-xs font-semibold text-[var(--fg-muted)]">{c.label}</p>
           </div>
         ))}
       </div>
 
-      <div className="flex flex-col gap-3 px-4">
-        <Link
-          href="/admin/servicios"
-          className="flex items-center justify-between rounded-[22px] bg-white px-4 py-4"
-        >
-          <span className="flex items-center gap-3 font-extrabold">
-            <DollarSign size={18} className="text-[#0077b6]" /> Subir precios
+      <div className="page flex flex-col gap-3 pt-4 md:max-w-xl">
+        <Link href="/admin/servicios" className="card press flex items-center justify-between px-4 py-4">
+          <span className="flex items-center gap-3 font-extrabold text-[var(--fg)]">
+            <DollarSign size={18} className="text-[var(--accent)]" /> Subir precios
           </span>
-          <ArrowRight size={16} className="text-[#90a0b7]" />
+          <ArrowRight size={16} className="text-[var(--fg-muted)]" />
         </Link>
-        <Link
-          href="/servicios"
-          className="flex items-center justify-between rounded-[22px] bg-white px-4 py-4"
-        >
-          <span className="flex items-center gap-3 font-extrabold">
-            <Sparkles size={18} className="text-[#0077b6]" /> Ver catálogo
+        <Link href="/servicios" className="card press flex items-center justify-between px-4 py-4">
+          <span className="flex items-center gap-3 font-extrabold text-[var(--fg)]">
+            <Sparkles size={18} className="text-[var(--accent)]" /> Ver catálogo
           </span>
-          <ArrowRight size={16} className="text-[#90a0b7]" />
+          <ArrowRight size={16} className="text-[var(--fg-muted)]" />
         </Link>
-        <Link
-          href="/sucursales"
-          className="flex items-center justify-between rounded-[22px] bg-white px-4 py-4"
-        >
-          <span className="flex items-center gap-3 font-extrabold">
-            <MapPin size={18} className="text-[#0077b6]" /> Sucursales
+        <Link href="/sucursales" className="card press flex items-center justify-between px-4 py-4">
+          <span className="flex items-center gap-3 font-extrabold text-[var(--fg)]">
+            <MapPin size={18} className="text-[var(--accent)]" /> Sucursales
           </span>
-          <ArrowRight size={16} className="text-[#90a0b7]" />
+          <ArrowRight size={16} className="text-[var(--fg-muted)]" />
         </Link>
       </div>
     </div>

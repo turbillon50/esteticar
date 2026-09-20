@@ -4,11 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Clock, MapPin, Navigation, Star } from "lucide-react";
 import { DynamicMap } from "@/components/DynamicMap";
-import {
-  rankByTravelTime,
-  resolveUserOrigin,
-  type Coord,
-} from "@/lib/geo";
+import { rankByTravelTime, resolveUserOrigin, type Coord } from "@/lib/geo";
 import { useEsteticar } from "@/lib/store";
 
 export default function SucursalesPage() {
@@ -39,52 +35,50 @@ export default function SucursalesPage() {
   );
 
   return (
-    <div className="min-h-full bg-[#f0f4f8] pb-8">
-      <header
-        className="relative overflow-hidden px-5 pb-6 pt-14 text-white"
-        style={{
-          background: "linear-gradient(150deg,#020b1a 0%,#03045e 50%,#0077b6 90%)",
-        }}
-      >
-        <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#48cae4]">
+    <div className="min-h-full bg-[var(--bg)] pb-8">
+      <header className="page pb-2 pt-6">
+        <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--accent)]">
           Dónde estamos
         </p>
-        <h1 className="text-[28px] font-extrabold leading-tight">Sucursales Esteticar</h1>
-        <p className="mt-1 text-[13px] font-medium text-[#90e0ef]/70">
-          {locations.length} autolavados en 6 ciudades de Morelos
+        <h1 className="display mt-1 text-[40px] text-[var(--fg)]">Sucursales</h1>
+        <p className="mt-1 text-[14px] font-medium text-[var(--fg-muted)]">
+          {locations.length} autolavados · ordenadas por tiempo de traslado
         </p>
       </header>
 
-      <div className="mt-5 px-4">
-        {originInfo.notice ? (
-          <div
-            className="mb-3.5 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3.5 py-3"
-            data-testid="geo-notice"
-          >
-            <Navigation size={14} className="mt-0.5 shrink-0 text-amber-600" />
-            <p className="text-[13px] font-bold leading-snug text-amber-800">{originInfo.notice}</p>
-          </div>
-        ) : ready ? (
-          <div className="mb-3.5 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5">
-            <MapPin size={14} className="text-emerald-600" />
-            <p className="text-[13px] font-bold text-emerald-700">
-              Ordenadas por tiempo de traslado desde tu ubicación
-            </p>
-          </div>
-        ) : (
-          <div className="mb-3.5 rounded-2xl bg-[#0077b6]/10 px-3.5 py-2.5 text-[13px] font-semibold text-[#0077b6]">
-            Obteniendo tu ubicación…
-          </div>
-        )}
+      <div className="page split pt-2">
+        <div>
+          {originInfo.notice ? (
+            <div
+              className="mb-3.5 flex items-start gap-2 rounded-[16px] border border-amber-200 bg-amber-50 px-3.5 py-3"
+              data-testid="geo-notice"
+            >
+              <Navigation size={14} className="mt-0.5 shrink-0 text-amber-700" />
+              <p className="text-[13px] font-bold leading-snug text-amber-900">{originInfo.notice}</p>
+            </div>
+          ) : ready ? (
+            <div className="mb-3.5 flex items-center gap-2 rounded-[16px] border border-[var(--border)] bg-white px-3.5 py-2.5">
+              <MapPin size={14} className="text-[var(--accent)]" />
+              <p className="text-[13px] font-bold text-[var(--fg)]">
+                Tiempos de traslado desde tu ubicación
+              </p>
+            </div>
+          ) : (
+            <div className="mb-3.5 rounded-[16px] bg-white px-3.5 py-2.5 text-[13px] font-semibold text-[var(--accent)]">
+              Obteniendo tu ubicación…
+            </div>
+          )}
 
-        <DynamicMap
-          locations={locations}
-          origin={originInfo.origin}
-          selectedId={selected}
-          onSelect={setSelected}
-        />
+          <DynamicMap
+            locations={locations}
+            origin={originInfo.origin}
+            selectedId={selected}
+            onSelect={setSelected}
+            height={360}
+          />
+        </div>
 
-        <div className="mt-4 flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5">
           {ranked.map((loc, i) => {
             const on = selected === loc.id;
             return (
@@ -92,54 +86,52 @@ export default function SucursalesPage() {
                 key={loc.id}
                 type="button"
                 onClick={() => setSelected(on ? null : loc.id)}
-                className="flex overflow-hidden rounded-[18px] text-left"
+                className="press flex overflow-hidden rounded-[18px] text-left"
                 style={{
-                  background: on ? "linear-gradient(135deg,#03045e,#0077b6)" : "#fff",
+                  background: on ? "var(--navy)" : "#fff",
+                  border: on ? "1px solid transparent" : "1px solid var(--border)",
                   boxShadow: on
-                    ? "0 6px 24px rgba(3,4,94,0.3)"
-                    : "0 2px 10px rgba(3,4,94,0.07)",
+                    ? "inset 0 1px 0 rgba(255,255,255,0.18), 0 8px 24px rgba(7,20,40,0.25)"
+                    : "inset 0 1px 0 rgba(255,255,255,0.8)",
                 }}
                 data-testid={`branch-${loc.id}`}
               >
                 <div
                   className="flex w-14 shrink-0 flex-col items-center justify-center"
-                  style={{ background: on ? "rgba(0,180,216,0.2)" : "#f0f4f8" }}
+                  style={{ background: on ? "rgba(46,196,224,0.12)" : "var(--bg)" }}
                 >
                   <span
                     className="text-base font-extrabold"
-                    style={{ color: on ? "#48cae4" : "#0077b6" }}
+                    style={{ color: on ? "#2ec4e0" : "var(--accent)" }}
                   >
                     {i + 1}
                   </span>
                   <span
                     className="px-1 text-center text-[9px] font-extrabold leading-tight"
-                    style={{ color: on ? "rgba(72,202,228,0.85)" : "#0077b6" }}
+                    style={{ color: on ? "#b8ecf6" : "var(--accent)" }}
                     data-testid={`eta-${loc.id}`}
                   >
                     {loc.eta}
                   </span>
                 </div>
                 <div className="flex-1 px-3.5 py-3">
-                  <p
-                    className="text-sm font-extrabold"
-                    style={{ color: on ? "#fff" : "#03045e" }}
-                  >
+                  <p className="text-sm font-extrabold" style={{ color: on ? "#fff" : "var(--fg)" }}>
                     {loc.name}
                   </p>
                   <p
-                    className="mt-0.5 text-[11px]"
-                    style={{ color: on ? "rgba(255,255,255,0.6)" : "#90a0b7" }}
+                    className="mt-0.5 text-[11px] font-medium"
+                    style={{ color: on ? "rgba(255,255,255,0.62)" : "var(--fg-muted)" }}
                   >
                     {loc.address} · {loc.city}
                   </p>
                   <div className="mt-1.5 flex items-center gap-3">
                     <span
                       className="inline-flex items-center gap-1 text-[11px] font-bold"
-                      style={{ color: on ? "#48cae4" : "#0077b6" }}
+                      style={{ color: on ? "#2ec4e0" : "var(--accent)" }}
                     >
                       <Clock size={10} /> {loc.openTime} – {loc.closeTime}
                     </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-500">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[var(--fg-muted)]">
                       <Star size={10} fill="currentColor" /> {loc.rating}
                     </span>
                   </div>
@@ -147,15 +139,10 @@ export default function SucursalesPage() {
               </button>
             );
           })}
+          <Link href="/agenda" className="cta mt-2 justify-center">
+            Agendar en la más cercana
+          </Link>
         </div>
-
-        <Link
-          href="/agenda"
-          className="mt-5 flex h-12 items-center justify-center rounded-2xl text-sm font-extrabold text-white"
-          style={{ background: "linear-gradient(135deg,#0077b6,#00b4d8)" }}
-        >
-          Agendar en la más cercana
-        </Link>
       </div>
     </div>
   );

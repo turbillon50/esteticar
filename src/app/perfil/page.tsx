@@ -1,13 +1,13 @@
 "use client";
 
-import { Shield, Sparkles, User, Wrench } from "lucide-react";
+import { Shield, Sparkles, User } from "lucide-react";
 import { useEsteticar } from "@/lib/store";
 import type { Role } from "@/lib/types";
 
 const ROLES: { id: Role; label: string; hint: string; icon: typeof User }[] = [
-  { id: "cliente", label: "Cliente", hint: "Agenda y paga", icon: User },
-  { id: "proveedor", label: "Proveedor", hint: "Confirma citas entrantes", icon: Sparkles },
-  { id: "admin", label: "Admin", hint: "Sube precios del catálogo", icon: Shield },
+  { id: "cliente", label: "Cliente", hint: "Agenda y paga tu lavado", icon: User },
+  { id: "proveedor", label: "Lavador", hint: "Confirma citas del día", icon: Sparkles },
+  { id: "admin", label: "Administración", hint: "Precios y sucursales", icon: Shield },
 ];
 
 export default function PerfilPage() {
@@ -17,23 +17,22 @@ export default function PerfilPage() {
   const name = useEsteticar((s) => s.customerName);
 
   return (
-    <div className="min-h-full bg-[#f0f4f8] pb-10">
-      <header
-        className="px-5 pb-8 pt-14 text-white"
-        style={{ background: "linear-gradient(150deg,#020b1a,#03045e,#0077b6)" }}
-      >
-        <div className="mb-4 grid h-16 w-16 place-items-center rounded-3xl bg-white/15 text-2xl font-extrabold">
-          SZ
+    <div className="min-h-full bg-[var(--bg)] pb-10">
+      <header className="hero-light px-6 pb-8 pt-8 text-white">
+        <div className="mx-auto max-w-[1120px]">
+          <div className="mb-4 grid h-16 w-16 place-items-center rounded-3xl bg-white/10 text-2xl font-extrabold ring-1 ring-white/15">
+            SZ
+          </div>
+          <h1 className="display text-[40px]">{name}</h1>
+          <p className="text-sm text-white/70">Cuernavaca, Morelos</p>
         </div>
-        <h1 className="text-2xl font-extrabold">{name}</h1>
-        <p className="text-sm text-white/70">Demo Cuernavaca · sin login real</p>
       </header>
 
-      <div className="px-4 pt-5">
-        <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#0077b6]">
-          Modo de demo
+      <div className="page pt-6">
+        <p className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--accent)]">
+          Tipo de cuenta
         </p>
-        <div className="flex flex-col gap-2.5">
+        <div className="grid gap-2.5 md:grid-cols-3">
           {ROLES.map(({ id, label, hint, icon: Icon }) => {
             const on = role === id;
             return (
@@ -42,13 +41,13 @@ export default function PerfilPage() {
                 type="button"
                 data-testid={`role-${id}`}
                 onClick={() => setRole(id)}
-                className="flex items-center gap-3 rounded-[20px] px-4 py-3.5 text-left"
+                className="press card flex items-center gap-3 px-4 py-3.5 text-left"
                 style={{
-                  background: on ? "linear-gradient(135deg,#03045e,#0077b6)" : "#fff",
-                  color: on ? "#fff" : "#03045e",
+                  background: on ? "var(--navy)" : "#fff",
+                  color: on ? "#fff" : "var(--fg)",
                 }}
               >
-                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-white/15">
+                <span className="grid h-10 w-10 place-items-center rounded-2xl bg-white/10 ring-1 ring-white/10">
                   <Icon size={18} />
                 </span>
                 <span>
@@ -63,9 +62,9 @@ export default function PerfilPage() {
         <button
           type="button"
           onClick={resetDemo}
-          className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-white text-sm font-bold text-[#90a0b7]"
+          className="mt-6 flex h-12 w-full items-center justify-center rounded-[16px] bg-white text-sm font-bold text-[var(--fg-muted)] ring-1 ring-[var(--border)] md:max-w-sm"
         >
-          <Wrench size={14} /> Reiniciar demo
+          Restaurar datos de la app
         </button>
       </div>
     </div>
