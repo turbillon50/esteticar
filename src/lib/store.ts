@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { CITY_COORDS, LOCATIONS, SEED_BOOKINGS, SERVICES, makeFolio } from "./seed";
@@ -155,5 +156,6 @@ export const useEsteticar = create<State>()(
 );
 
 export function useOpenLocations() {
-  return useEsteticar((s) => s.locations.filter(isOpenLocation));
+  const locations = useEsteticar((s) => s.locations);
+  return useMemo(() => locations.filter(isOpenLocation), [locations]);
 }
