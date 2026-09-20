@@ -40,7 +40,11 @@ export function SideMenu({
         aria-label="Cerrar menú"
         onClick={onClose}
       />
-      <aside className={`drawer ${open ? "is-on" : ""}`} aria-hidden={!open}>
+      <aside
+        className={`drawer ${open ? "is-on" : ""}`}
+        aria-hidden={!open}
+        style={{ transform: open ? "translateX(0)" : "translateX(-104%)" }}
+      >
         <div className="hero-light px-5 pb-5 pt-[calc(env(safe-area-inset-top)+20px)] text-white">
           <div className="mb-4 h-12 w-[168px] overflow-hidden rounded-xl ring-1 ring-white/15">
             <img src="/brand/logo.jpg" alt="" className="h-full w-full object-cover" />
