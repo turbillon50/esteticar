@@ -2,21 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  ArrowUpRight,
-  CalendarCheck,
-  DollarSign,
-  LayoutGrid,
-  MapPin,
-} from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
+import { OPS_NAV, opsActive } from "@/components/ops/nav";
 import { useEsteticar } from "@/lib/store";
-
-const ITEMS = [
-  { href: "/admin", label: "Panel", Icon: LayoutGrid, exact: true },
-  { href: "/admin/sucursales", label: "Sucursales", Icon: MapPin },
-  { href: "/admin/servicios", label: "Precios", Icon: DollarSign },
-  { href: "/admin/citas", label: "Citas", Icon: CalendarCheck },
-];
 
 export function AdminMenu({
   open,
@@ -46,14 +34,12 @@ export function AdminMenu({
             Esteticar Ops
           </p>
           <p className="mt-2 text-[18px] font-extrabold">{name}</p>
-          <p className="text-[12px] text-white/60">Administración · Morelos</p>
+          <p className="text-[12px] text-white/60">Operaciones · Morelos</p>
         </div>
         <nav className="flex-1 px-4 py-4">
           <div className="card overflow-hidden">
-            {ITEMS.map((item, i) => {
-              const on = item.exact
-                ? pathname === "/admin"
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+            {OPS_NAV.map((item, i) => {
+              const on = opsActive(pathname, item);
               return (
                 <Link
                   key={item.href}

@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
 import { MapPin, Plus, Power, Trash2 } from "lucide-react";
+import { OpsHead } from "@/components/ops/OpsHead";
+import { occupancy } from "@/lib/ops";
 import { CITIES } from "@/lib/seed";
 import { isOpenLocation } from "@/lib/types";
 import { useEsteticar, type LocationDraft } from "@/lib/store";
@@ -20,6 +21,7 @@ const EMPTY: LocationDraft = {
 function Inner() {
   const params = useSearchParams();
   const locations = useEsteticar((s) => s.locations);
+  const bookings = useEsteticar((s) => s.bookings);
   const addLocation = useEsteticar((s) => s.addLocation);
   const setLocationActive = useEsteticar((s) => s.setLocationActive);
   const removeLocation = useEsteticar((s) => s.removeLocation);
@@ -49,36 +51,33 @@ function Inner() {
   };
 
   return (
-    <div className="min-h-full bg-[var(--bg)] pb-10">
-      <header className="page pb-2 pt-6">
-        <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--accent)]">
-          Red Morelos
-        </p>
-        <h1 className="display mt-1 text-[40px] text-[var(--fg)]">Sucursales</h1>
-        <p className="mt-1 text-[14px] text-[var(--fg-muted)]">
-          Alta y baja en caliente. Lo inactivo se oculta del mapa y de la agenda.
-        </p>
-      </header>
+    <div className="ops-page">
+      <OpsHead
+        kicker="Red Morelos"
+        title="Sucursales"
+        hint="Alta y baja en caliente. Lo inactivo se oculta del mapa y de la agenda del cliente."
+        actions={
+          <button
+            type="button"
+            data-testid="alta-sucursal"
+            onClick={() => setOpenForm((v) => !v)}
+            className="cta px-4 text-[13px]"
+          >
+            <Plus size={14} /> Dar de alta
+          </button>
+        }
+      />
 
-      <div className="page flex flex-col gap-3 pt-2">
-        {flash ? (
-          <p className="rounded-[16px] bg-emerald-50 px-4 py-3 text-[13px] font-bold text-emerald-800">
-            {flash}
-          </p>
-        ) : null}
+      <div className="page ops-pad flex flex-col gap-3">
+        {flash ? <p className="ops-flash">{flash}</p> : null}
 
-        <div className="flex flex-wrap gap-2">
+        <div className="ops-filters">
           {(["todas", "activas", "baja"] as const).map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setFilter(f)}
-              className="rounded-full px-3 py-1.5 text-[12px] font-extrabold"
-              style={{
-                background: filter === f ? "var(--navy)" : "#fff",
-                color: filter === f ? "#fff" : "var(--fg)",
-                border: "1px solid var(--border)",
-              }}
+              className={filter === f ? "ops-chip info is-on" : "ops-chip"}
             >
               {f === "todas" ? "Todas" : f === "activas" ? "Activas" : "De baja"}
             </button>
@@ -92,17 +91,8 @@ function Inner() {
           className="field"
         />
 
-        <button
-          type="button"
-          data-testid="alta-sucursal"
-          onClick={() => setOpenForm((v) => !v)}
-          className="cta justify-center gap-2 text-[14px]"
-        >
-          <Plus size={16} /> Dar de alta sucursal
-        </button>
-
         {openForm ? (
-          <form onSubmit={submit} className="card grid gap-3 p-4 md:grid-cols-2">
+          <form onSubmit={submit} className="ops-panel grid gap-3 md:grid-cols-2">
             <label className="grid gap-1 text-[12px] font-bold text-[var(--fg-muted)] md:col-span-2">
               Nombre comercial
               <input
@@ -183,10 +173,11 @@ function Inner() {
 
         {list.map((loc) => {
           const on = isOpenLocation(loc);
+          const occ = occupancy(loc, bookings, 0);
           return (
             <article
               key={loc.id}
-              className="card p-4"
+              className="ops-loc"
               data-testid={`admin-branch-${loc.id}`}
               style={{ opacity: on ? 1 : 0.72 }}
             >
@@ -197,10 +188,13 @@ function Inner() {
                     <MapPin size={12} /> {loc.address} · {loc.city}
                   </p>
                   <p className="mt-1 text-[12px] font-semibold text-[var(--fg-muted)]">
-                    {loc.phone} · {loc.openTime}–{loc.closeTime}
+                    {loc.phone} · {loc.openTime}–{loc.closeTime} · {occ.taken} citas hoy
                   </p>
                 </div>
-                <span className={on ? "pill-on" : "pill-off"}>{on ? "Activa" : "De baja"}</span>
+                <span className={on ? "ops-chip ok" : "ops-chip bad"}>{on ? "Activa" : "De baja"}</span>
+              </div>
+              <div className="ops-meter mt-3">
+                <i style={{ width: `${occ.pct}%` }} />
               </div>
               <div className="mt-3 flex gap-2">
                 <button

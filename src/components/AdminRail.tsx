@@ -2,71 +2,69 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  ArrowUpRight,
-  CalendarCheck,
-  DollarSign,
-  LayoutGrid,
-  MapPin,
-  RotateCcw,
-} from "lucide-react";
+import { ArrowUpRight, RotateCcw } from "lucide-react";
+import { OPS_NAV, opsActive } from "@/components/ops/nav";
 import { useEsteticar } from "@/lib/store";
-
-const ITEMS = [
-  { href: "/admin", label: "Panel", Icon: LayoutGrid, exact: true },
-  { href: "/admin/sucursales", label: "Sucursales", Icon: MapPin },
-  { href: "/admin/servicios", label: "Precios", Icon: DollarSign },
-  { href: "/admin/citas", label: "Citas", Icon: CalendarCheck },
-];
 
 export function AdminRail() {
   const pathname = usePathname();
   const resetDemo = useEsteticar((s) => s.resetDemo);
+  const groups = ["Operar", "Red", "Catálogo", "Inteligencia"];
 
   return (
     <aside className="rail ops-rail">
-      <img
-        src="/brand/logo.jpg"
-        alt="Esteticar"
-        className="mb-4 h-[64px] w-[64px] rounded-[16px] object-cover ring-1 ring-white/15"
-      />
-      <p className="px-1 text-[10px] font-extrabold uppercase tracking-[0.22em] text-[#2ec4e0]">
-        Esteticar Ops
-      </p>
-      <p className="mb-6 px-1 text-[11px] font-medium text-white/50">Consola de Sergio Zapata</p>
-      <nav className="flex flex-1 flex-col gap-1">
-        {ITEMS.map((item) => {
-          const on = item.exact
-            ? pathname === "/admin"
-            : pathname === item.href || pathname.startsWith(`${item.href}/`);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 rounded-[14px] px-3 py-2.5 text-[14px] font-bold"
-              style={{
-                background: on ? "rgba(46,196,224,0.16)" : "transparent",
-                color: on ? "#b8ecf6" : "rgba(255,255,255,0.78)",
-              }}
-            >
-              <item.Icon size={16} strokeWidth={2.2} />
-              {item.label}
-            </Link>
-          );
-        })}
+      <div className="mb-6 flex items-center gap-3 px-1">
+        <img
+          src="/brand/logo.jpg"
+          alt="Esteticar"
+          className="h-11 w-11 rounded-[12px] object-cover ring-1 ring-white/15"
+        />
+        <div>
+          <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#2ec4e0]">
+            Esteticar
+          </p>
+          <p className="text-[13px] font-extrabold text-white">Operaciones</p>
+        </div>
+      </div>
+      <p className="mb-4 px-1 text-[11px] text-white/45">Sergio Zapata · Morelos</p>
+      <nav className="flex flex-1 flex-col gap-4">
+        {groups.map((g) => (
+          <div key={g}>
+            <p className="mb-1 px-3 text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/35">
+              {g}
+            </p>
+            {OPS_NAV.filter((i) => i.group === g).map((item) => {
+              const on = opsActive(pathname, item);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center gap-3 rounded-[12px] px-3 py-2 text-[13px] font-bold"
+                  style={{
+                    background: on ? "rgba(46,196,224,0.14)" : "transparent",
+                    color: on ? "#d7f6ff" : "rgba(255,255,255,0.72)",
+                  }}
+                >
+                  <item.Icon size={15} strokeWidth={2.2} />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
       <Link
         href="/"
-        className="mb-2 flex items-center justify-center gap-2 rounded-[14px] px-3 py-2.5 text-[13px] font-bold text-white/70 ring-1 ring-white/10"
+        className="mb-1 flex items-center justify-center gap-2 rounded-[12px] px-3 py-2.5 text-[12px] font-bold text-white/70 ring-1 ring-white/10"
       >
-        Ver app cliente <ArrowUpRight size={14} />
+        App del cliente <ArrowUpRight size={13} />
       </Link>
       <button
         type="button"
         onClick={resetDemo}
-        className="flex items-center justify-center gap-2 rounded-[14px] px-3 py-2.5 text-[12px] font-bold text-white/45"
+        className="flex items-center justify-center gap-2 rounded-[12px] px-3 py-2 text-[11px] font-bold text-white/40"
       >
-        <RotateCcw size={13} /> Restaurar demo
+        <RotateCcw size={12} /> Restaurar demo
       </button>
     </aside>
   );

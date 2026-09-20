@@ -44,6 +44,19 @@ export type Booking = {
   customerName: string;
   createdAt: string;
   notes?: string;
+  staffId?: string;
+};
+
+export type StaffRole = "supervisor" | "lavador" | "caja";
+export type StaffStatus = "en_turno" | "libre" | "descanso";
+
+export type Staff = {
+  id: string;
+  name: string;
+  role: StaffRole;
+  locationId: string;
+  status: StaffStatus;
+  phone: string;
 };
 
 export function isOpenLocation(loc: Location) {

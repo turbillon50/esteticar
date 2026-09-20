@@ -1,4 +1,4 @@
-import type { Booking, Location, Service } from "./types";
+import type { Booking, Location, PaymentMethod, Service, Staff } from "./types";
 
 export const SERVICES: Service[] = [
   {
@@ -167,61 +167,84 @@ export const LOCATIONS: Location[] = [
   },
 ];
 
-function todayISO(): string {
+export function isoDay(offset = 0): string {
   const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() + offset);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
 
-export const SEED_BOOKINGS: Booking[] = [
-  {
-    id: "bk-incoming",
-    folio: "EST-180326",
-    serviceId: "basico",
-    locationId: "spa-cuernavaca",
-    date: todayISO(),
-    time: "10:00",
-    payment: "tarjeta",
-    status: "pendiente",
-    customerName: "María López",
+function bk(
+  id: string,
+  folio: string,
+  serviceId: string,
+  locationId: string,
+  day: number,
+  time: string,
+  payment: PaymentMethod,
+  status: Booking["status"],
+  customerName: string,
+  notes?: string,
+  staffId?: string,
+): Booking {
+  return {
+    id,
+    folio,
+    serviceId,
+    locationId,
+    date: isoDay(day),
+    time,
+    payment,
+    status,
+    customerName,
     createdAt: new Date().toISOString(),
-    notes: "Honda Civic blanco, placas MOR-4821",
-  },
+    notes,
+    staffId,
+  };
+}
+
+export const STAFF: Staff[] = [
+  { id: "st-hector", name: "Héctor Morales", role: "supervisor", locationId: "spa-cuernavaca", status: "en_turno", phone: "777-100-0101" },
+  { id: "st-ivan", name: "Iván Cruz", role: "lavador", locationId: "spa-cuernavaca", status: "en_turno", phone: "777-100-0102" },
+  { id: "st-lalo", name: "Eduardo Peña", role: "lavador", locationId: "express-palmas", status: "en_turno", phone: "777-100-0103" },
+  { id: "st-rosa", name: "Rosa Jiménez", role: "caja", locationId: "spa-cuernavaca", status: "en_turno", phone: "777-100-0104" },
+  { id: "st-beto", name: "Alberto Nava", role: "lavador", locationId: "wash-jiutepec", status: "en_turno", phone: "777-100-0105" },
+  { id: "st-karla", name: "Karla Soto", role: "lavador", locationId: "spa-cuautla", status: "libre", phone: "735-100-0106" },
+  { id: "st-memo", name: "Guillermo Díaz", role: "lavador", locationId: "premium-tres-marias", status: "en_turno", phone: "777-100-0107" },
+  { id: "st-lucia", name: "Lucía Vargas", role: "supervisor", locationId: "premium-xochitepec", status: "descanso", phone: "777-100-0108" },
+];
+
+export const SEED_BOOKINGS: Booking[] = [
+  bk("bk-incoming", "EST-180326", "basico", "spa-cuernavaca", 0, "10:00", "tarjeta", "pendiente", "María López", "Honda Civic blanco, placas MOR-4821", "st-ivan"),
+  bk("bk-juan", "EST-180401", "camioneta", "wash-jiutepec", 0, "11:30", "oxxo", "pendiente", "Juan Hernández", "Ford Ranger gris", "st-beto"),
+  bk("bk-ana", "EST-180402", "completo", "spa-cuernavaca", 0, "09:00", "tarjeta", "confirmada", "Ana García", "BMW X3 negro — interiores", "st-hector"),
+  bk("bk-luis", "EST-180403", "basico", "express-palmas", 0, "12:00", "transferencia", "confirmada", "Luis Ramírez", undefined, "st-lalo"),
+  bk("bk-patri", "EST-180404", "basico", "spa-cuernavaca", 0, "08:00", "tarjeta", "completada", "Patricia Solís", undefined, "st-ivan"),
+  bk("bk-carlos", "EST-180405", "camioneta", "premium-tres-marias", 0, "16:00", "tarjeta", "confirmada", "Carlos Méndez", "Toyota Hilux", "st-memo"),
+  bk("bk-fer", "EST-180406", "completo", "premium-xochitepec", 0, "13:30", "transferencia", "pendiente", "Fernanda Ríos", "Mercedes C200"),
+  bk("bk-diego", "EST-180310", "basico", "clean-temixco", -1, "10:30", "oxxo", "completada", "Diego Ortega"),
+  bk("bk-sofia", "EST-180311", "camioneta", "spa-cuautla", -1, "12:00", "tarjeta", "completada", "Sofía Nava"),
+  bk("bk-robe", "EST-180312", "completo", "spa-cuernavaca", -1, "15:00", "tarjeta", "completada", "Roberto Cruz", undefined, "st-hector"),
+  bk("bk-elena", "EST-180313", "basico", "splash-yautepec", -1, "09:00", "transferencia", "completada", "Elena Vargas"),
+  bk("bk-miguel", "EST-180314", "basico", "express-jojutla", -2, "11:00", "oxxo", "completada", "Miguel Ángel Ruiz"),
+  bk("bk-paola", "EST-180315", "camioneta", "express-palmas", -2, "17:00", "tarjeta", "completada", "Paola Mendoza"),
+  bk("bk-tomas", "EST-180501", "basico", "spa-cuernavaca", 1, "09:30", "tarjeta", "pendiente", "Tomás Aguilar", "Nissan Versa rojo"),
+  bk("bk-irene", "EST-180502", "completo", "wash-jiutepec", 1, "11:00", "transferencia", "confirmada", "Irene Salgado"),
+  bk("bk-hugo", "EST-180280", "basico", "spa-cuernavaca", -3, "08:30", "tarjeta", "completada", "Hugo Beltrán"),
 ];
 
 export const SLOT_HOURS = [
-  "08:00",
-  "08:30",
-  "09:00",
-  "09:30",
-  "10:00",
-  "10:30",
-  "11:00",
-  "11:30",
-  "12:00",
-  "12:30",
-  "13:00",
-  "13:30",
-  "14:00",
-  "14:30",
-  "15:00",
-  "15:30",
-  "16:00",
-  "16:30",
-  "17:00",
-  "17:30",
-  "18:00",
-  "18:30",
-  "19:00",
-  "19:30",
+  "08:00", "08:30", "09:00", "09:30", "10:00", "10:30",
+  "11:00", "11:30", "12:00", "12:30", "13:00", "13:30",
+  "14:00", "14:30", "15:00", "15:30", "16:00", "16:30",
+  "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
 ];
 
 export function slotsForLocation(location: Location): string[] {
-  const open = location.openTime;
-  const close = location.closeTime;
-  return SLOT_HOURS.filter((h) => h >= open && h < close);
+  return SLOT_HOURS.filter((h) => h >= location.openTime && h < location.closeTime);
 }
 
 export function makeFolio(): string {

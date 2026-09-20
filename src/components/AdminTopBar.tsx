@@ -25,7 +25,9 @@ export function AdminTopBar({
         </span>
       </button>
       <div className="text-center">
-        <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#2ec4e0]">Ops</p>
+        <p className="flex items-center justify-center gap-1.5 text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#2ec4e0]">
+          <span className="ops-dot" style={{ width: 6, height: 6 }} /> Ops
+        </p>
         <p className="text-[13px] font-extrabold tracking-[0.12em] text-white">ESTETICAR</p>
       </div>
       <Link

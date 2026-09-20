@@ -1,6 +1,8 @@
 "use client";
 
 import { Minus, Plus } from "lucide-react";
+import { OpsHead } from "@/components/ops/OpsHead";
+import { mxn } from "@/lib/ops";
 import { useEsteticar } from "@/lib/store";
 
 export default function AdminServiciosPage() {
@@ -9,20 +11,15 @@ export default function AdminServiciosPage() {
   const setPrice = useEsteticar((s) => s.setPrice);
 
   return (
-    <div className="min-h-full bg-[var(--bg)] pb-10">
-      <header className="page pb-2 pt-6">
-        <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--accent)]">
-          Catálogo
-        </p>
-        <h1 className="display mt-1 text-[40px] text-[var(--fg)]">Precios</h1>
-        <p className="mt-1 text-[14px] text-[var(--fg-muted)]">
-          IVA incluido. El cambio se refleja al instante en /servicios.
-        </p>
-      </header>
-
-      <div className="page grid gap-3 pt-2 md:grid-cols-3">
+    <div className="ops-page">
+      <OpsHead
+        kicker="Catálogo"
+        title="Precios"
+        hint="IVA incluido. El cambio se refleja al instante en la app del cliente."
+      />
+      <div className="page ops-pad grid gap-3 md:grid-cols-3">
         {services.map((s) => (
-          <article key={s.id} className="card overflow-hidden">
+          <article key={s.id} className="ops-loc overflow-hidden p-0">
             <div className="relative h-32">
               <img src={s.image} alt="" className="h-full w-full object-cover" />
             </div>
@@ -30,10 +27,10 @@ export default function AdminServiciosPage() {
               <p className="font-extrabold text-[var(--fg)]">{s.name}</p>
               <p className="text-[12px] text-[var(--fg-muted)]">{s.durationMinutes} min</p>
               <p
-                className="mt-3 text-3xl font-extrabold text-[var(--accent)]"
+                className="mt-3 text-3xl font-extrabold text-[var(--accent)] num"
                 data-testid={`admin-price-${s.id}`}
               >
-                ${s.price.toLocaleString("es-MX")}
+                {mxn(s.price)}
               </p>
               <div className="mt-3 flex gap-2">
                 <button

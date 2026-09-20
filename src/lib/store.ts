@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { CITY_COORDS, LOCATIONS, SEED_BOOKINGS, SERVICES, makeFolio } from "./seed";
+import { CITY_COORDS, LOCATIONS, SEED_BOOKINGS, SERVICES, STAFF, makeFolio } from "./seed";
 import type {
   Booking,
   BookingStatus,
@@ -11,6 +11,8 @@ import type {
   PaymentMethod,
   Role,
   Service,
+  Staff,
+  StaffStatus,
 } from "./types";
 import { isOpenLocation } from "./types";
 
@@ -28,6 +30,7 @@ type State = {
   services: Service[];
   locations: Location[];
   bookings: Booking[];
+  staff: Staff[];
   customerName: string;
   setRole: (role: Role) => void;
   bumpPrice: (serviceId: string, delta: number) => void;
@@ -45,6 +48,7 @@ type State = {
   updateLocation: (id: string, patch: Partial<Location>) => void;
   setLocationActive: (id: string, active: boolean) => void;
   removeLocation: (id: string) => void;
+  setStaffStatus: (id: string, status: StaffStatus) => void;
   resetDemo: () => void;
 };
 
@@ -67,6 +71,7 @@ export const useEsteticar = create<State>()(
       services: SERVICES,
       locations: LOCATIONS,
       bookings: SEED_BOOKINGS,
+      staff: STAFF,
       customerName: "Sergio Zapata",
       setRole: (role) => set({ role }),
       bumpPrice: (serviceId, delta) =>
@@ -132,15 +137,20 @@ export const useEsteticar = create<State>()(
         set({
           locations: get().locations.filter((l) => l.id !== id),
         }),
+      setStaffStatus: (id, status) =>
+        set({
+          staff: get().staff.map((p) => (p.id === id ? { ...p, status } : p)),
+        }),
       resetDemo: () =>
         set({
           services: SERVICES,
           locations: LOCATIONS,
           bookings: SEED_BOOKINGS,
+          staff: STAFF,
         }),
     }),
     {
-      name: "esteticar-demo-v1",
+      name: "esteticar-demo-v2",
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<State>;
         return {
@@ -149,6 +159,7 @@ export const useEsteticar = create<State>()(
           locations: normalizeLocations(p.locations ?? current.locations),
           services: p.services ?? current.services,
           bookings: p.bookings ?? current.bookings,
+          staff: p.staff ?? current.staff,
         };
       },
     },

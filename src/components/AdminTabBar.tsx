@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarCheck, DollarSign, LayoutGrid, MapPin, Plus } from "lucide-react";
+import { CalendarCheck, LayoutGrid, MapPin, Plus, Wallet } from "lucide-react";
 
 export function AdminTabBar() {
   const pathname = usePathname();
   const left = [
-    { href: "/admin", label: "Panel", icon: LayoutGrid, exact: true },
-    { href: "/admin/citas", label: "Citas", icon: CalendarCheck },
+    { href: "/admin", label: "Hoy", icon: LayoutGrid, exact: true },
+    { href: "/admin/citas", label: "Agenda", icon: CalendarCheck },
   ];
   const right = [
-    { href: "/admin/servicios", label: "Precios", icon: DollarSign },
+    { href: "/admin/caja", label: "Caja", icon: Wallet },
     { href: "/admin/sucursales", label: "Red", icon: MapPin },
   ];
 
