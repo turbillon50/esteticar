@@ -36,6 +36,17 @@ export const SERVICES: Service[] = [
   },
 ];
 
+export const CITY_COORDS: Record<string, { lat: number; lng: number }> = {
+  Cuernavaca: { lat: 18.9242, lng: -99.2216 },
+  Jiutepec: { lat: 18.8861, lng: -99.1708 },
+  Cuautla: { lat: 18.8064, lng: -98.9456 },
+  Temixco: { lat: 18.8511, lng: -99.2344 },
+  Yautepec: { lat: 18.8928, lng: -99.0634 },
+  Jojutla: { lat: 18.618, lng: -99.18 },
+  Huitzilac: { lat: 19.01, lng: -99.205 },
+  Xochitepec: { lat: 18.8078, lng: -99.2428 },
+};
+
 export const LOCATIONS: Location[] = [
   {
     id: "spa-cuernavaca",
@@ -48,6 +59,7 @@ export const LOCATIONS: Location[] = [
     lat: 18.9242,
     lng: -99.2216,
     rating: 4.9,
+    active: true,
   },
   {
     id: "express-palmas",
@@ -60,6 +72,7 @@ export const LOCATIONS: Location[] = [
     lat: 18.918,
     lng: -99.23,
     rating: 4.7,
+    active: true,
   },
   {
     id: "premium-tres-marias",
@@ -72,6 +85,7 @@ export const LOCATIONS: Location[] = [
     lat: 19.01,
     lng: -99.205,
     rating: 4.8,
+    active: true,
   },
   {
     id: "wash-jiutepec",
@@ -84,6 +98,7 @@ export const LOCATIONS: Location[] = [
     lat: 18.8861,
     lng: -99.1708,
     rating: 4.6,
+    active: true,
   },
   {
     id: "spa-cuautla",
@@ -96,6 +111,7 @@ export const LOCATIONS: Location[] = [
     lat: 18.8064,
     lng: -98.9456,
     rating: 4.7,
+    active: true,
   },
   {
     id: "clean-temixco",
@@ -108,6 +124,7 @@ export const LOCATIONS: Location[] = [
     lat: 18.8511,
     lng: -99.2344,
     rating: 4.5,
+    active: true,
   },
   {
     id: "splash-yautepec",
@@ -120,6 +137,7 @@ export const LOCATIONS: Location[] = [
     lat: 18.8928,
     lng: -99.0634,
     rating: 4.6,
+    active: true,
   },
   {
     id: "express-jojutla",
@@ -132,6 +150,7 @@ export const LOCATIONS: Location[] = [
     lat: 18.618,
     lng: -99.18,
     rating: 4.4,
+    active: true,
   },
   {
     id: "premium-xochitepec",
@@ -144,6 +163,7 @@ export const LOCATIONS: Location[] = [
     lat: 18.8078,
     lng: -99.2428,
     rating: 4.8,
+    active: true,
   },
 ];
 
@@ -209,13 +229,4 @@ export function makeFolio(): string {
   return `EST-${n}`;
 }
 
-export const CITIES = [
-  "Cuernavaca",
-  "Jiutepec",
-  "Cuautla",
-  "Temixco",
-  "Yautepec",
-  "Jojutla",
-  "Huitzilac",
-  "Xochitepec",
-];
+export const CITIES = Object.keys(CITY_COORDS);

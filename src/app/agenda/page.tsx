@@ -16,7 +16,7 @@ import {
 import { DynamicMap } from "@/components/DynamicMap";
 import { rankByTravelTime, resolveUserOrigin, type Coord } from "@/lib/geo";
 import { slotsForLocation } from "@/lib/seed";
-import { useEsteticar } from "@/lib/store";
+import { useEsteticar, useOpenLocations } from "@/lib/store";
 import type { PaymentMethod } from "@/lib/types";
 
 const STEPS = ["Servicio", "Fecha", "Sucursal", "Horario", "Pago"] as const;
@@ -135,7 +135,7 @@ function Calendar({
 export default function AgendaPage() {
   const router = useRouter();
   const services = useEsteticar((s) => s.services);
-  const locations = useEsteticar((s) => s.locations);
+  const locations = useOpenLocations();
   const addBooking = useEsteticar((s) => s.addBooking);
 
   const [step, setStep] = useState(0);

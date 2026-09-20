@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { ArrowRight, Clock, MapPin, Shield } from "lucide-react";
-import { useEsteticar } from "@/lib/store";
+import { useEsteticar, useOpenLocations } from "@/lib/store";
 
 const CITIES = ["Cuernavaca", "Jiutepec", "Cuautla", "Temixco", "Yautepec", "Jojutla"];
 
 export default function HomePage() {
   const services = useEsteticar((s) => s.services);
-  const locations = useEsteticar((s) => s.locations);
+  const locations = useOpenLocations();
 
   return (
     <div className="min-h-full bg-[var(--bg)] pb-10">

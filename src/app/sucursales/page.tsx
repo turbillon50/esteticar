@@ -5,10 +5,10 @@ import Link from "next/link";
 import { Clock, MapPin, Navigation, Star } from "lucide-react";
 import { DynamicMap } from "@/components/DynamicMap";
 import { rankByTravelTime, resolveUserOrigin, type Coord } from "@/lib/geo";
-import { useEsteticar } from "@/lib/store";
+import { useOpenLocations } from "@/lib/store";
 
 export default function SucursalesPage() {
-  const locations = useEsteticar((s) => s.locations);
+  const locations = useOpenLocations();
   const [raw, setRaw] = useState<Coord | null>(null);
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);

@@ -29,6 +29,7 @@ export type Location = {
   lat: number;
   lng: number;
   rating: number;
+  active: boolean;
 };
 
 export type Booking = {
@@ -44,3 +45,7 @@ export type Booking = {
   createdAt: string;
   notes?: string;
 };
+
+export function isOpenLocation(loc: Location) {
+  return loc.active !== false;
+}

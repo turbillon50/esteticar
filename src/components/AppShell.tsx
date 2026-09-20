@@ -8,15 +8,21 @@ import { TopBar } from "./TopBar";
 import { SideMenu } from "./SideMenu";
 import { TabBar } from "./TabBar";
 import { DesktopRail } from "./DesktopRail";
+import { AdminRail } from "./AdminRail";
+import { AdminTabBar } from "./AdminTabBar";
+import { AdminTopBar } from "./AdminTopBar";
+import { AdminMenu } from "./AdminMenu";
 
 const HIDE_MOBILE = ["/agenda", "/confirmacion"];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const isOps = pathname.startsWith("/admin");
   const hideMobile = HIDE_MOBILE.some((p) => pathname.startsWith(p));
   const [ready, setReady] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [splash, setSplash] = useState(true);
+  const [splash, setSplash] = useState(!isOps);
+  const setRole = useEsteticar((s) => s.setRole);
 
   useEffect(() => {
     const unsub = useEsteticar.persist.onFinishHydration(() => setReady(true));
@@ -30,7 +36,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMenuOpen(false);
-  }, [pathname]);
+    if (isOps) {
+      setRole("admin");
+      setSplash(false);
+    }
+  }, [pathname, isOps, setRole]);
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -41,14 +51,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const endSplash = useCallback(() => setSplash(false), []);
 
   return (
-    <div className="app">
+    <div className={`app ${isOps ? "is-ops" : ""}`}>
       {splash ? <Splash onDone={endSplash} /> : null}
-      <DesktopRail />
+      {isOps ? <AdminRail /> : <DesktopRail />}
       <div className="stage">
-        {!hideMobile ? (
+        {isOps ? (
+          <AdminTopBar open={menuOpen} onToggle={() => setMenuOpen((v) => !v)} />
+        ) : !hideMobile ? (
           <TopBar open={menuOpen} onToggle={() => setMenuOpen((v) => !v)} />
         ) : null}
-        <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+        {isOps ? (
+          <AdminMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+        ) : (
+          <SideMenu open={menuOpen} onClose={() => setMenuOpen(false)} />
+        )}
         <div className="stage-body">
           {ready ? (
             children
@@ -58,7 +74,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           )}
         </div>
-        {!hideMobile && ready ? <TabBar /> : null}
+        {isOps && ready ? <AdminTabBar /> : null}
+        {!isOps && !hideMobile && ready ? <TabBar /> : null}
       </div>
     </div>
   );
